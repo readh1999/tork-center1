@@ -1,0 +1,45 @@
+{
+  "name": "tork-center",
+  "version": "2.0.0",
+  "description": "Tork Center — Car Service Management System | نظام إدارة مركز تورك للسيارات",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --linux"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.torkcenter.app",
+    "productName": "Tork Center",
+    "copyright": "Tork Center © 2025",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "tork-center.html",
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["ar", "en_US"],
+      "language": "1025"
+    }
+  }
+}

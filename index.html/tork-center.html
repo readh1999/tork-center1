@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tork Center — نظام الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#070a0f;--bg2:#0b0f17;--bg3:#111620;--bg4:#18202e;--card:#0f1520;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --red:#c0392b;--red2:#e74c3c;--red-dim:rgba(192,57,43,0.15);--red-glow:rgba(192,57,43,0.3);
+  --silver:#c8d0dc;--silver2:#e8ecf0;--silver-dim:rgba(200,208,220,0.1);
+  --gold:#d4a843;--gold-dim:rgba(212,168,67,0.12);
+  --green:#27ae60;--green-dim:rgba(39,174,96,0.12);
+  --blue:#2980b9;--blue-dim:rgba(41,128,185,0.12);
+  --orange:#e67e22;--orange-dim:rgba(230,126,34,0.12);
+  --purple:#8e44ad;--purple-dim:rgba(142,68,173,0.12);
+  --text:#dde3ed;--text2:#8a94a8;--text3:#4a5468;
+  --radius:14px;--radius-sm:8px;--shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+/* ===== LIGHT MODE ===== */
+body.light-mode{
+  --bg:#f0f2f5;--bg2:#e8eaed;--bg3:#ffffff;--bg4:#f5f6f8;--card:#ffffff;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --red:#c0392b;--red2:#e74c3c;--red-dim:rgba(192,57,43,0.1);--red-glow:rgba(192,57,43,0.2);
+  --silver:#5a6475;--silver2:#222831;--silver-dim:rgba(90,100,117,0.1);
+  --gold:#b8860b;--gold-dim:rgba(184,134,11,0.1);
+  --green:#1e8449;--green-dim:rgba(30,132,73,0.1);
+  --blue:#1a6fa8;--blue-dim:rgba(26,111,168,0.1);
+  --orange:#d35400;--orange-dim:rgba(211,84,0,0.1);
+  --purple:#7d3c98;--purple-dim:rgba(125,60,152,0.1);
+  --text:#1a1f2e;--text2:#4a5568;--text3:#9aa5b4;
+  --shadow:0 8px 32px rgba(0,0,0,0.12);
+}
+/* Theme toggle button */
+.theme-toggle-btn{width:36px;height:36px;border-radius:9px;background:var(--bg3);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0;}
+.theme-toggle-btn:hover{border-color:var(--red2);}
+/* Developer panel badge */
+.dev-badge{background:linear-gradient(135deg,#8e44ad,#5b2c6f);color:white;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;margin-right:auto;}
+/* Auto backup indicator */
+.backup-indicator{display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--green-dim);border:1px solid var(--green);font-size:11px;color:var(--green);font-weight:700;}
+/* Transition for smooth theme change */
+*{transition:background-color .2s,border-color .2s,color .15s;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}::-webkit-scrollbar-thumb:hover{background:var(--red);}
+
+/* ===== LOGIN ===== */
+#loginScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden;}
+.login-bg-pattern{position:absolute;inset:0;background:
+  radial-gradient(ellipse 70% 50% at 50% 110%,rgba(192,57,43,0.12) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 30% at 80% 20%,rgba(200,208,220,0.04) 0%,transparent 50%);
+}
+.login-lines{position:absolute;inset:0;opacity:0.04;background-image:linear-gradient(rgba(200,208,220,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(200,208,220,0.5) 1px,transparent 1px);background-size:48px 48px;}
+.login-card{position:relative;z-index:2;width:440px;max-width:95vw;background:var(--card);border:1px solid var(--border2);border-radius:24px;padding:44px 40px;box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(192,57,43,0.08),inset 0 1px 0 rgba(255,255,255,0.04);animation:slideUp .7s cubic-bezier(.34,1.56,.64,1);}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px) scale(.96)}}
+.login-brand{text-align:center;margin-bottom:36px;}
+.login-logo-wrap{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
+.login-logo-icon{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--red),#8b0000);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 28px var(--red-glow);}
+.login-brand-text{text-align:right;}
+.login-brand-en{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--silver2);letter-spacing:2px;line-height:1;}
+.login-brand-ar{font-size:13px;color:var(--text2);margin-top:2px;}
+.login-brand-sub{font-size:12px;color:var(--text3);}
+.login-divider{height:1px;background:var(--border2);margin:0 0 28px;}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px;letter-spacing:.5px;}
+.form-group input{width:100%;padding:13px 16px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:all .2s;}
+.form-group input:focus{border-color:var(--red2);background:var(--bg4);box-shadow:0 0 0 3px var(--red-dim);}
+.form-group input::placeholder{color:var(--text3);}
+.btn-login{width:100%;padding:15px;background:linear-gradient(135deg,var(--red),#8b0000);border:none;border-radius:var(--radius-sm);color:white;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.5px;box-shadow:0 4px 20px var(--red-glow);}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--red-glow);}
+.login-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red2);padding:11px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;margin-bottom:14px;display:none;text-align:center;}
+.login-footer{text-align:center;margin-top:18px;}
+.login-reset-btn{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;text-decoration:underline;padding:4px;}
+.login-reset-btn:hover{color:var(--text2);}
+
+/* ===== APP ===== */
+#app{display:none;flex-direction:row;height:100vh;}
+
+/* ===== SIDEBAR ===== */
+#sidebar{width:252px;min-width:252px;height:100vh;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;z-index:10;position:relative;}
+.sidebar-header{padding:18px 16px;border-bottom:1px solid var(--border);}
+.sidebar-brand{display:flex;align-items:center;gap:10px;}
+.sb-icon{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--red),#8b0000);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 14px var(--red-glow);}
+.sb-name{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--silver2);letter-spacing:1px;line-height:1.1;}
+.sb-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.sb-sync{display:flex;align-items:center;gap:5px;font-size:10px;margin-top:4px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite;}
+.sync-dot.off{background:var(--orange);animation:none;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 8px;}
+.nav-section{margin-bottom:18px;}.nav-section-title{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1.5px;padding:0 10px 6px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:all .18s;color:var(--text2);font-size:13px;font-weight:500;margin-bottom:1px;position:relative;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--red-dim);color:var(--red2);font-weight:700;}
+.nav-item.active::before{content:'';position:absolute;right:-8px;width:3px;height:60%;background:var(--red2);border-radius:2px 0 0 2px;}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-right:auto;background:var(--red);color:white;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;min-width:17px;text-align:center;}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border);}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg3);}
+.user-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--red),#8b0000);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:white;flex-shrink:0;}
+.user-info .user-name{font-size:12px;font-weight:700;}.user-info .user-role{font-size:10px;color:var(--text3);}
+.logout-btn{margin-right:auto;color:var(--text3);font-size:16px;cursor:pointer;padding:4px;border-radius:6px;transition:all .2s;}
+.logout-btn:hover{color:var(--red2);background:var(--red-dim);}
+
+/* ===== MAIN ===== */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:58px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--card);}
+.topbar-title{font-size:16px;font-weight:800;}
+.topbar-actions{display:flex;align-items:center;gap:9px;}
+.topbar-btn{padding:8px 15px;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.topbar-btn:hover{border-color:var(--red2);color:var(--red2);background:var(--red-dim);}
+.topbar-btn.primary{background:linear-gradient(135deg,var(--red),#8b0000);border-color:transparent;color:white;font-weight:800;}
+.topbar-btn.primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px var(--red-glow);}
+.topbar-btn.green-btn{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.topbar-btn.green-btn:hover{background:var(--green);color:white;}
+.notif-btn{position:relative;width:36px;height:36px;border-radius:9px;background:var(--bg3);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;}
+.notif-btn:hover{border-color:var(--red2);}
+.notif-count{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg);}
+.content-area{flex:1;overflow-y:auto;padding:22px;}
+
+/* ===== PAGES ===== */
+.page{display:none;animation:fadeIn .25s ease;}.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}}
+
+/* ===== STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 15px;position:relative;overflow:hidden;transition:all .2s;}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.red::after{background:linear-gradient(90deg,var(--red),transparent);}
+.stat-card.silver::after{background:linear-gradient(90deg,var(--silver),transparent);}
+.stat-card.green::after{background:linear-gradient(90deg,var(--green),transparent);}
+.stat-card.gold::after{background:linear-gradient(90deg,var(--gold),transparent);}
+.stat-card.blue::after{background:linear-gradient(90deg,var(--blue),transparent);}
+.stat-card.orange::after{background:linear-gradient(90deg,var(--orange),transparent);}
+.stat-icon{font-size:22px;margin-bottom:8px;}
+.stat-label{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;}
+.stat-value{font-size:22px;font-weight:900;margin-top:2px;}
+.stat-value.red{color:var(--red2);}.stat-value.silver{color:var(--silver);}.stat-value.green{color:var(--green);}.stat-value.gold{color:var(--gold);}.stat-value.blue{color:var(--blue);}.stat-value.orange{color:var(--orange);}
+
+/* ===== TABLE ===== */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px;}
+.table-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+.table-title{font-size:14px;font-weight:800;}
+.table-search-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.search-input{padding:8px 13px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:all .2s;width:190px;}
+.search-input:focus{border-color:var(--red2);background:var(--bg4);}
+.search-input::placeholder{color:var(--text3);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--bg3);}
+thead th{padding:11px 14px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.015);}
+tbody td{padding:11px 14px;font-size:12px;}
+.td-img{width:36px;height:36px;border-radius:9px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.badge-red{background:var(--red-dim);color:var(--red2);}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-silver{background:var(--silver-dim);color:var(--silver);}
+.badge-gold{background:var(--gold-dim);color:var(--gold);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-orange{background:var(--orange-dim);color:var(--orange);}
+.badge-purple{background:var(--purple-dim);color:var(--purple);}
+
+/* ===== ACTION BUTTONS ===== */
+.row-actions{display:flex;gap:4px;}
+.action-btn{width:28px;height:28px;border-radius:7px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:12px;}
+.action-btn.edit{background:var(--blue-dim);color:var(--blue);}.action-btn.edit:hover{background:var(--blue);color:white;}
+.action-btn.del{background:var(--red-dim);color:var(--red2);}.action-btn.del:hover{background:var(--red2);color:white;}
+.action-btn.view{background:var(--silver-dim);color:var(--silver);}.action-btn.view:hover{background:var(--silver);color:var(--bg);}
+.action-btn.pay{background:var(--green-dim);color:var(--green);}.action-btn.pay:hover{background:var(--green);color:white;}
+.action-btn.print{background:var(--purple-dim);color:var(--purple);}.action-btn.print:hover{background:var(--purple);color:white;}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:20px;width:560px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,0.7);animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);}
+.modal.wide{width:820px;}.modal.xl{width:1020px;}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(18px)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.modal-title{font-size:16px;font-weight:800;}
+.modal-close{width:32px;height:32px;border-radius:9px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.modal-close:hover{border-color:var(--red2);color:var(--red2);background:var(--red-dim);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row.three{grid-template-columns:1fr 1fr 1fr;}
+.form-row.four{grid-template-columns:1fr 1fr 1fr 1fr;}
+.form-field{margin-bottom:14px;}.form-field.full{grid-column:1/-1;}
+.form-field label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;letter-spacing:.3px;}
+.form-field input,.form-field select,.form-field textarea{width:100%;padding:10px 13px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'Cairo',sans-serif;font-size:13px;outline:none;transition:all .2s;}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--red2);background:var(--bg4);box-shadow:0 0 0 3px var(--red-dim);}
+.form-field select option{background:var(--bg3);}
+.form-field textarea{resize:vertical;min-height:65px;}
+.modal-footer{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.btn{padding:10px 20px;border-radius:var(--radius-sm);border:1.5px solid transparent;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-secondary{background:var(--bg3);border-color:var(--border2);color:var(--text2);}.btn-secondary:hover{background:var(--bg4);color:var(--text);}
+.btn-primary{background:linear-gradient(135deg,var(--red),#8b0000);color:white;}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--red-glow);}
+.btn-danger{background:var(--red-dim);border-color:var(--red2);color:var(--red2);}.btn-danger:hover{background:var(--red2);color:white;}
+.btn-green{background:var(--green-dim);border-color:var(--green);color:var(--green);}.btn-green:hover{background:var(--green);color:white;}
+.btn-purple{background:var(--purple-dim);border-color:var(--purple);color:var(--purple);}.btn-purple:hover{background:var(--purple);color:white;}
+
+/* ===== EMPTY ===== */
+.empty-state{text-align:center;padding:48px 20px;}.empty-state .ei{font-size:44px;margin-bottom:12px;opacity:.4;}.empty-state p{color:var(--text3);font-size:13px;}
+
+/* ===== FILTER TABS ===== */
+.filter-tabs{display:flex;gap:5px;flex-wrap:wrap;}
+.filter-tab{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;color:var(--text2);}
+.filter-tab.active{border-color:var(--red2);background:var(--red-dim);color:var(--red2);}
+
+/* ===== CAR MODELS ===== */
+.car-models-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
+.car-model-chip{background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;transition:all .2s;text-align:center;}
+.car-model-chip:hover{border-color:var(--red2);background:var(--red-dim);}
+.car-model-chip.active{border-color:var(--red2);background:var(--red-dim);color:var(--red2);}
+.car-model-chip .model-name{font-size:12px;font-weight:800;letter-spacing:.5px;}
+.car-model-chip .model-brand{font-size:10px;color:var(--text3);margin-top:2px;}
+.car-model-chip .model-icon{font-size:20px;margin-bottom:5px;}
+
+/* ===== CATEGORIES CHIPS ===== */
+.cats-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.cat-chip{padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;transition:all .18s;}
+.cat-chip:hover,.cat-chip.active{border-color:var(--red2);color:var(--red2);background:var(--red-dim);}
+
+/* ===== DASHBOARD ===== */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
+.dash-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.dash-card-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.dash-card-body{padding:12px;}
+.activity-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius-sm);transition:background .15s;}
+.activity-item:hover{background:var(--bg3);}
+.activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.activity-text{font-size:11px;flex:1;}.activity-time{font-size:9px;color:var(--text3);}
+
+/* ===== INVOICE ===== */
+.inv-type-tabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
+.inv-type-tab{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border2);font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;color:var(--text2);}
+.inv-type-tab.active{border-color:var(--red2);background:var(--red-dim);color:var(--red2);}
+.inv-items-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+.inv-items-table th{padding:7px 9px;background:var(--bg3);font-size:10px;font-weight:700;color:var(--text3);text-align:right;border-bottom:1px solid var(--border);}
+.inv-items-table td{padding:6px 9px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.inv-item-input{width:100%;padding:5px 7px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:'Cairo',sans-serif;font-size:11px;outline:none;}
+.inv-item-input:focus{border-color:var(--red2);}
+.inv-totals{background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;}
+.inv-total-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;}
+.inv-total-row.grand{font-size:17px;font-weight:900;color:var(--red2);border-top:1px solid var(--border);padding-top:10px;margin-top:6px;}
+.prod-search-wrap{position:relative;}
+.prod-dropdown{position:absolute;top:100%;right:0;left:0;z-index:200;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius-sm);max-height:200px;overflow-y:auto;box-shadow:var(--shadow);}
+.prod-drop-item{padding:9px 12px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:9px;transition:background .15s;}
+.prod-drop-item:hover{background:var(--red-dim);}
+.inst-schedule{background:var(--bg3);border-radius:var(--radius-sm);padding:11px;margin-top:12px;max-height:220px;overflow-y:auto;}
+.inst-row{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;border-radius:6px;font-size:11px;}
+.inst-row.paid{opacity:.5;}.inst-row.overdue{color:var(--red2);}.inst-row.today{background:var(--gold-dim);color:var(--gold);}
+
+/* ===== TREASURY ===== */
+.trs-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
+.trs-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
+.trs-label{font-size:10px;color:var(--text3);font-weight:700;margin-bottom:5px;}.trs-value{font-size:20px;font-weight:900;}
+
+/* ===== SETTINGS ===== */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:768px){.settings-grid{grid-template-columns:1fr;}}
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.settings-card-title{font-size:13px;font-weight:800;margin-bottom:15px;padding-bottom:11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+/* ===== USERS ===== */
+.users-list{display:grid;gap:9px;}
+.user-row{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);}
+.user-row-avatar{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;}
+.user-row-info{flex:1;}.user-row-name{font-size:13px;font-weight:700;}.user-row-meta{font-size:10px;color:var(--text3);}
+
+/* ===== REPORTS ===== */
+.reports-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:13px;margin-bottom:20px;}
+.report-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;}
+.report-card:hover{border-color:var(--red2);transform:translateY(-2px);}
+.report-card-icon{font-size:26px;margin-bottom:9px;}.report-card-title{font-size:13px;font-weight:800;margin-bottom:4px;}.report-card-desc{font-size:11px;color:var(--text3);line-height:1.5;}
+
+/* ===== ALERTS ===== */
+.alert-banner{padding:10px 15px;border-radius:var(--radius-sm);margin-bottom:13px;display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;}
+.alert-banner.warning{background:var(--gold-dim);border:1px solid var(--gold);color:var(--gold);}
+.alert-banner.danger{background:var(--red-dim);border:1px solid var(--red2);color:var(--red2);}
+.alert-banner.info{background:var(--blue-dim);border:1px solid var(--blue);color:var(--blue);}
+.alert-banner.success{background:var(--green-dim);border:1px solid var(--green);color:var(--green);}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.info-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.info-row:last-child{border-bottom:none;}.info-label{color:var(--text3);width:120px;flex-shrink:0;}.info-val{font-weight:600;}
+/* ===== NOTIFICATIONS PANEL ===== */
+.notif-panel{position:fixed;top:0;left:0;width:360px;max-width:96vw;height:100vh;background:var(--card);border-right:1px solid var(--border2);z-index:600;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:8px 0 32px rgba(0,0,0,0.5);display:flex;flex-direction:column;}
+.notif-panel.open{transform:translateX(0);}
+.notif-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:599;display:none;backdrop-filter:blur(2px);}
+.notif-panel-overlay.open{display:block;}
+.notif-header{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.notif-list{flex:1;overflow-y:auto;padding:10px;}
+.notif-item{padding:12px 13px;border-radius:var(--radius-sm);margin-bottom:7px;border:1px solid var(--border);transition:all .2s;cursor:pointer;}
+.notif-item:hover{background:var(--bg3);}
+.notif-item.unread{border-right:3px solid var(--red2);}
+.notif-item.unread.success{border-right-color:var(--green);}
+.notif-item.unread.info{border-right-color:var(--blue);}
+.notif-icon{font-size:20px;margin-bottom:5px;}.notif-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.notif-desc{font-size:11px;color:var(--text2);line-height:1.5;}.notif-meta{font-size:10px;color:var(--text3);margin-top:5px;display:flex;justify-content:space-between;}
+.notif-footer{padding:12px;border-top:1px solid var(--border);}
+/* ===== TORK INVOICE PRINT ===== */
+@media print{
+  #loginScreen,#setupWizard,#sidebar,.modal-overlay,#toast,.notif-panel,.notif-panel-overlay,.topbar,.no-print{display:none!important;}
+  body,#main,#app{height:auto!important;overflow:visible!important;background:white!important;color:#111!important;}
+  .content-area{padding:0!important;overflow:visible!important;}
+  .page:not(.active){display:none!important;}
+}
+.tork-invoice{font-family:'Cairo',sans-serif;background:white;color:#111;padding:0;}
+.tork-inv-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 20px;border-bottom:3px solid #c0392b;margin-bottom:14px;}
+.tork-logos{display:flex;gap:14px;align-items:center;}
+.tork-logo-badge{display:flex;align-items:center;justify-content:center;padding:4px 10px;border:2px solid #c0392b;border-radius:6px;font-weight:900;font-size:12px;letter-spacing:1px;}
+.nissan-badge{border-color:#c0392b;color:#c0392b;}
+.infiniti-badge{border-color:#111;color:#111;}
+.tork-car-center{text-align:center;}
+.tork-car-emoji{font-size:40px;}
+.tork-brand-right{text-align:right;}
+.tork-brand-name-en{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#c0392b;letter-spacing:2px;}
+.tork-brand-name-ar{font-size:16px;font-weight:800;color:#111;}
+.tork-brand-slogan{font-size:10px;color:#666;}
+.tork-inv-title{text-align:center;font-size:18px;font-weight:900;background:#c0392b;color:white;padding:8px;margin-bottom:14px;letter-spacing:1px;}
+.tork-inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;font-size:13px;}
+.tork-inv-meta-row{display:flex;gap:6px;padding:5px 0;border-bottom:1px dashed #ddd;}
+.tork-inv-meta-label{color:#666;min-width:90px;}
+.tork-inv-meta-val{font-weight:700;}
+.tork-inv-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px;}
+.tork-inv-table th{background:#c0392b;color:white;padding:9px 12px;text-align:right;font-weight:700;}
+.tork-inv-table td{padding:8px 12px;border-bottom:1px solid #eee;text-align:right;}
+.tork-inv-table tr:nth-child(even) td{background:#fafafa;}
+.tork-inv-totals{width:280px;margin-right:auto;margin-bottom:14px;}
+.tork-inv-totals td{padding:6px 12px;border:1px solid #ddd;font-size:13px;}
+.tork-inv-totals .grand-row{background:#c0392b;color:white;font-weight:900;font-size:15px;}
+.tork-inv-footer{text-align:center;border-top:2px solid #c0392b;padding-top:12px;margin-top:14px;}
+.tork-inv-footer-logo{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#c0392b;letter-spacing:2px;}
+.tork-inv-footer-sub{font-size:11px;color:#666;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<!-- =================== LOGIN =================== -->
+<div id="loginScreen">
+  <div class="login-bg-pattern"></div>
+  <div class="login-lines"></div>
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-logo-wrap">
+        <div class="login-logo-icon">🔧</div>
+        <div class="login-brand-text">
+          <div class="login-brand-en">TORK CENTER</div>
+          <div class="login-brand-ar">مركز تورك</div>
+          <div class="login-brand-sub">Performance & Care — للأداء والعناية بالسيارات</div>
+        </div>
+      </div>
+    </div>
+    <div class="login-divider"></div>
+    <div class="login-error" id="loginError">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+    <div class="form-group"><label>اسم المستخدم</label><input type="text" id="loginUser" placeholder="أدخل اسم المستخدم" autocomplete="off"></div>
+    <div class="form-group"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="أدخل كلمة المرور"></div>
+    <button class="btn-login" onclick="doLogin()">دخول إلى النظام</button>
+    <div class="login-footer">
+      <button class="login-reset-btn" onclick="resetSetup()">⚙️ إعادة إعداد النظام</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== APP =================== -->
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sb-icon">🔧</div>
+        <div>
+          <div class="sb-name">TORK CENTER</div>
+          <div class="sb-sub">نظام الإدارة المتكامل</div>
+          <div class="sb-sync"><span class="sync-dot off" id="sidebarSyncDot"></span><span id="sidebarSyncTxt" style="color:var(--text3)">غير متصل</span></div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">الرئيسية</div>
+        <div class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">📊</span>لوحة التحكم</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">المخزون</div>
+        <div class="nav-item" onclick="navigate('parts')"><span class="nav-icon">🔩</span>قطع الغيار</div>
+        <div class="nav-item" onclick="navigate('categories')"><span class="nav-icon">🏷️</span>التصنيفات</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">المبيعات والخدمات</div>
+        <div class="nav-item" onclick="navigate('invoices')"><span class="nav-icon">🧾</span>الفواتير<span class="nav-badge" id="debtBadge" style="display:none">!</span></div>
+        <div class="nav-item" onclick="navigate('installments')"><span class="nav-icon">📅</span>الأقساط<span class="nav-badge" id="instBadge" style="display:none">0</span></div>
+        <div class="nav-item" onclick="navigate('customers')"><span class="nav-icon">👥</span>الزبائن والسيارات</div>
+        <div class="nav-item" onclick="navigate('returns')"><span class="nav-icon">↩️</span>المرتجعات</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">المالية</div>
+        <div class="nav-item" onclick="navigate('treasury')"><span class="nav-icon">💰</span>الصندوق</div>
+        <div class="nav-item" onclick="navigate('reports')"><span class="nav-icon">📈</span>التقارير</div>
+      </div>
+      <div class="nav-section" id="navAdmin">
+        <div class="nav-section-title">الإدارة</div>
+        <div class="nav-item" onclick="navigate('users')"><span class="nav-icon">👤</span>المستخدمون</div>
+        <div class="nav-item" onclick="navigate('settings')"><span class="nav-icon">⚙️</span>الإعدادات</div>
+        <div class="nav-item" onclick="navigate('backup')"><span class="nav-icon">💾</span>النسخ الاحتياطي</div>
+      </div>
+      <div class="nav-section" id="navDeveloper" style="display:none">
+        <div class="nav-section-title" style="color:var(--purple)">🛠️ المطور</div>
+        <div class="nav-item" onclick="navigate('developer')"><span class="nav-icon">🔐</span>لوحة المطور<span class="dev-badge">DEV</span></div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-av" id="sidebarUserAvatar">م</div>
+        <div class="user-info"><div class="user-name" id="sidebarUserName">المستخدم</div><div class="user-role" id="sidebarUserRole">مدير</div></div>
+        <div class="logout-btn" onclick="doLogout()" title="خروج">⏻</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
+      <div class="topbar-actions" id="topbarActions">
+        <div class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تبديل المظهر">🌙</div>
+        <div class="notif-btn" onclick="toggleNotifPanel()" id="notifBell" title="الإشعارات">🔔<span class="notif-count" id="notifCount" style="display:none">0</span></div>
+      </div>
+    </div>
+    <div class="content-area">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="dashStats"></div>
+        <div id="dashAlerts"></div>
+        <div class="dash-grid">
+          <div class="dash-card"><div class="dash-card-header">⚡ آخر النشاطات</div><div class="dash-card-body" id="recentActivity"></div></div>
+          <div class="dash-card"><div class="dash-card-header">⚠️ قطع منخفضة المخزون</div><div class="dash-card-body" id="lowStockList"></div></div>
+          <div class="dash-card"><div class="dash-card-header">📅 أقساط مستحقة اليوم</div><div class="dash-card-body" id="todayInstList"></div></div>
+          <div class="dash-card"><div class="dash-card-header">🧾 آخر الفواتير</div><div class="dash-card-body" id="recentInvoices"></div></div>
+        </div>
+      </div>
+
+      <!-- PARTS -->
+      <div class="page" id="page-parts">
+        <div class="car-models-grid" id="carModelsFilter"></div>
+        <div class="cats-wrap" id="partsCatFilter"></div>
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">قطع الغيار</div>
+            <div class="table-search-row"><input type="text" class="search-input" placeholder="🔍 بحث باسم القطعة أو الرقم..." oninput="searchParts(this.value)"></div>
+          </div>
+          <div id="partsTableBody"><div class="empty-state"><div class="ei">🔩</div><p>لا توجد قطع غيار</p></div></div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="page" id="page-categories">
+        <div class="table-wrap"><div class="table-header"><div class="table-title">تصنيفات القطع</div></div><div id="categoriesBody"></div></div>
+      </div>
+
+      <!-- INVOICES -->
+      <div class="page" id="page-invoices">
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">الفواتير</div>
+            <div class="table-search-row">
+              <div class="filter-tabs" id="invFilterTabs">
+                <div class="filter-tab active" onclick="filterInvoices('all',this)">الكل</div>
+                <div class="filter-tab" onclick="filterInvoices('cash',this)">💵 نقدي</div>
+                <div class="filter-tab" onclick="filterInvoices('debt',this)">📋 دين</div>
+                <div class="filter-tab" onclick="filterInvoices('installment',this)">📅 تقسيط</div>
+                <div class="filter-tab" onclick="filterInvoices('service',this)">🔧 صيانة</div>
+              </div>
+              <input type="text" class="search-input" placeholder="🔍 بحث..." oninput="searchInvoices(this.value)">
+            </div>
+          </div>
+          <div id="invoicesTableBody"></div>
+        </div>
+      </div>
+
+      <!-- INSTALLMENTS -->
+      <div class="page" id="page-installments">
+        <div id="instAlertsWrap"></div>
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">ملفات الأقساط</div>
+            <div class="filter-tabs">
+              <div class="filter-tab active" onclick="filterInst('all',this)">الكل</div>
+              <div class="filter-tab" onclick="filterInst('active',this)">🟡 نشط</div>
+              <div class="filter-tab" onclick="filterInst('completed',this)">✅ مكتمل</div>
+              <div class="filter-tab" onclick="filterInst('overdue',this)">🔴 متأخر</div>
+            </div>
+          </div>
+          <div id="installmentsTableBody"></div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div class="page" id="page-customers">
+        <div class="table-wrap"><div class="table-header"><div class="table-title">الزبائن وسياراتهم</div></div><div id="customersBody"></div></div>
+      </div>
+
+      <!-- RETURNS -->
+      <div class="page" id="page-returns">
+        <div class="table-wrap"><div class="table-header"><div class="table-title">المرتجعات</div></div><div id="returnsBody"></div></div>
+      </div>
+
+      <!-- TREASURY -->
+      <div class="page" id="page-treasury">
+        <div class="trs-summary" id="trsummary"></div>
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">حركات الصندوق</div>
+            <div class="table-search-row">
+              <div class="filter-tabs">
+                <div class="filter-tab active" onclick="filterTreasury('all',this)">الكل</div>
+                <div class="filter-tab" onclick="filterTreasury('income',this)">📥 دخل</div>
+                <div class="filter-tab" onclick="filterTreasury('expense',this)">📤 صرف</div>
+              </div>
+              <input type="date" class="search-input" style="width:150px" onchange="filterTreasuryDate(this.value)">
+            </div>
+          </div>
+          <div id="treasuryBody"></div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="page" id="page-reports">
+        <div class="reports-grid">
+          <div class="report-card" onclick="showReport('sales')"><div class="report-card-icon">📊</div><div class="report-card-title">تقرير المبيعات</div><div class="report-card-desc">إيرادات اليوم والشهر والإجمالي</div></div>
+          <div class="report-card" onclick="showReport('inventory')"><div class="report-card-icon">🔩</div><div class="report-card-title">تقرير المخزون</div><div class="report-card-desc">قيمة المخزون والقطع المنخفضة</div></div>
+          <div class="report-card" onclick="showReport('treasury_report')"><div class="report-card-icon">💰</div><div class="report-card-title">تقرير الصندوق</div><div class="report-card-desc">الدخل والصرف والرصيد</div></div>
+          <div class="report-card" onclick="showReport('debts')"><div class="report-card-icon">📋</div><div class="report-card-title">تقرير الديون</div><div class="report-card-desc">المبالغ المستحقة والأقساط</div></div>
+          <div class="report-card" onclick="showReport('profit')"><div class="report-card-icon">💹</div><div class="report-card-title">تقرير الأرباح</div><div class="report-card-desc">صافي الربح وهامشه</div></div>
+          <div class="report-card" onclick="showReport('models')"><div class="report-card-icon">🚗</div><div class="report-card-title">تقرير حسب الموديل</div><div class="report-card-desc">أكثر الموديلات مبيعاً وصيانةً</div></div>
+        </div>
+        <div id="reportContent"></div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users"><div class="users-list" id="usersList"></div></div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-card-title">🏪 إعدادات المركز</div>
+            <div class="form-field"><label>اسم المركز</label><input type="text" id="settingAppName" value="Tork Center"></div>
+            <div class="form-field"><label>رقم الهاتف</label><input type="text" id="settingPhone"></div>
+            <div class="form-field"><label>العنوان</label><input type="text" id="settingAddress"></div>
+            <div class="form-field"><label>العملة</label>
+              <select id="settingCurrency"><option value="SAR">ريال سعودي (SAR)</option><option value="IQD">دينار عراقي (IQD)</option><option value="USD">دولار (USD)</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="saveAppSettings()" style="width:100%">💾 حفظ</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-title">🔑 تغيير بيانات الدخول</div>
+            <div id="changeCredWrap">
+              <div class="form-field"><label>اسم المستخدم الجديد</label><input type="text" id="newUsername"></div>
+              <div class="form-field"><label>كلمة المرور الحالية</label><input type="password" id="currentPass"></div>
+              <div class="form-field"><label>كلمة المرور الجديدة</label><input type="password" id="newPass"></div>
+              <div class="form-field"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPass"></div>
+              <button class="btn btn-primary" onclick="changeCredentials()" style="width:100%">🔐 تحديث</button>
+            </div>
+          </div>
+          <div class="settings-card" style="grid-column:1/-1">
+            <div class="settings-card-title">🔥 Firebase — الربط بالإنترنت وتعدد الفروع</div>
+            <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700" id="fbConfigStatus">
+                <span class="sync-dot off"></span><span style="color:var(--orange)">غير متصل بـ Firebase</span>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:5px" id="fbConfigInfo">لم يتم إعداد Firebase</div>
+            </div>
+            <div class="form-field full"><label>Firebase Config (JSON)</label>
+              <textarea id="settingFirebaseConfig" style="font-family:monospace;font-size:11px;height:90px" placeholder='{ "apiKey": "...", "databaseURL": "https://...", ... }'></textarea>
+            </div>
+            <div style="display:flex;gap:9px">
+              <button class="btn btn-green" onclick="applyFirebaseConfig()">🔄 تطبيق وربط</button>
+              <button class="btn btn-secondary" onclick="disconnectFirebase()">⛔ قطع الاتصال</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-title">🖨️ إعدادات الطباعة</div>
+            <div class="form-field"><label>نوع الطباعة</label><select id="settingPrintType"><option value="a4">A4 — فاتورة Tork Center</option><option value="thermal">حراري 80mm</option></select></div>
+            <div class="form-field"><label>ضريبة القيمة المضافة (%)</label><input type="number" id="settingTax" min="0" max="100" placeholder="15"></div>
+            <button class="btn btn-primary" onclick="savePrintSettings()" style="width:100%">💾 حفظ</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-title">🚗 موديلات السيارات</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">الموديلات المُبرمجة مسبقاً. يمكنك إضافة موديلات جديدة عند إضافة القطع.</div>
+            <div class="car-models-grid" style="margin-bottom:12px" id="settingsModelsList"></div>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="newModelInput" class="search-input" style="flex:1" placeholder="مثال: Q70">
+              <button class="btn btn-primary" onclick="addCarModel()">+ إضافة</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACKUP -->
+      <div class="page" id="page-backup">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-card-title">💾 النسخ الاحتياطي</div>
+            <p style="color:var(--text2);font-size:12px;margin-bottom:14px;line-height:1.6">احفظ نسخة كاملة من بيانات النظام.</p>
+            <div id="autoBackupStatus" style="margin-bottom:12px"></div>
+            <button class="btn btn-primary" onclick="exportBackup()" style="width:100%;margin-bottom:10px">⬇️ تصدير النسخة الاحتياطية</button>
+            <div class="form-field"><label>استعادة من ملف</label><input type="file" id="backupFile" accept=".json"></div>
+            <button class="btn btn-secondary" onclick="importBackup()" style="width:100%">⬆️ استعادة</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-title">🔄 تحديث النظام</div>
+            <p style="color:var(--text2);font-size:12px;margin-bottom:14px;line-height:1.6">استبدل ملف HTML فقط. بياناتك محفوظة في المتصفح.</p>
+            <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px">
+              <div style="color:var(--green);font-weight:700;font-size:12px">✅ الإصدار الحالي: v2.0 — Tork Center</div>
+            </div>
+            <div style="background:var(--red-dim);border:1px solid var(--red2);border-radius:var(--radius-sm);padding:12px">
+              <div style="color:var(--red2);font-weight:700;font-size:11px">📌 صدّر نسخة احتياطية قبل أي تحديث</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEVELOPER PANEL -->
+      <div class="page" id="page-developer">
+        <div style="background:linear-gradient(135deg,rgba(142,68,173,0.1),rgba(91,44,111,0.05));border:1px solid rgba(142,68,173,0.3);border-radius:var(--radius);padding:20px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#8e44ad,#5b2c6f);display:flex;align-items:center;justify-content:center;font-size:20px">🛠️</div>
+            <div>
+              <div style="font-size:18px;font-weight:900;color:var(--purple)">لوحة تحكم المطور</div>
+              <div style="font-size:11px;color:var(--text3)">Developer Control Panel — readh</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.7;border-top:1px solid rgba(142,68,173,0.2);padding-top:10px;margin-top:10px">
+            ⚠️ هذه الصفحة مخصصة للمطور فقط. التغييرات هنا تؤثر على سلوك النظام الأساسي.
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Auto Password Rotation -->
+          <div class="settings-card" style="border-color:rgba(142,68,173,0.3)">
+            <div class="settings-card-title" style="color:var(--purple)">🔑 تدوير كلمة المرور التلقائي</div>
+            <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.7">
+              عند التفعيل: يتم تغيير كلمة مرور جميع المستخدمين تلقائياً كل <strong>4 أشهر</strong> إلى الرمز <strong style="color:var(--red2)">1234567</strong>. فقط المطور يمكنه تفعيل/إيقاف هذه الميزة.
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border2);margin-bottom:12px">
+              <div>
+                <div style="font-size:13px;font-weight:700">تفعيل التدوير التلقائي</div>
+                <div style="font-size:10px;color:var(--text3)" id="autoRotateStatus">غير محدد</div>
+              </div>
+              <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer">
+                <input type="checkbox" id="autoRotateToggle" onchange="toggleAutoRotate(this.checked)" style="opacity:0;width:0;height:0">
+                <span id="toggleSlider" style="position:absolute;inset:0;background:var(--bg4);border-radius:20px;border:1.5px solid var(--border2);transition:all .3s"></span>
+                <span id="toggleDot" style="position:absolute;width:18px;height:18px;background:var(--text3);border-radius:50%;top:3px;left:3px;transition:all .3s"></span>
+              </label>
+            </div>
+            <div id="autoRotateInfo" style="display:none;background:var(--purple-dim);border:1px solid var(--purple);border-radius:var(--radius-sm);padding:10px;font-size:11px;margin-bottom:12px">
+              <div style="font-weight:700;color:var(--purple);margin-bottom:4px">📅 معلومات التدوير</div>
+              <div id="rotateInfoContent" style="color:var(--text2);line-height:1.7"></div>
+            </div>
+            <button class="btn btn-danger" onclick="forceRotateNow()" style="width:100%;font-size:12px">⚡ تطبيق التدوير الآن (فوري)</button>
+          </div>
+
+          <!-- System Info -->
+          <div class="settings-card" style="border-color:rgba(142,68,173,0.3)">
+            <div class="settings-card-title" style="color:var(--purple)">📊 معلومات النظام</div>
+            <div id="devSystemInfo" style="font-size:12px;line-height:2.2"></div>
+          </div>
+
+          <!-- Auto Backup Settings -->
+          <div class="settings-card" style="border-color:rgba(142,68,173,0.3)">
+            <div class="settings-card-title" style="color:var(--purple)">🗄️ النسخ الاحتياطي التلقائي</div>
+            <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.7">
+              يتم تصدير نسخة احتياطية تلقائية كل <strong>يومين</strong> عند بدء تشغيل النظام.
+            </div>
+            <div id="backupDevInfo" style="font-size:12px;line-height:2;margin-bottom:12px"></div>
+            <button class="btn btn-green" onclick="exportBackup()" style="width:100%;font-size:12px">💾 تصدير احتياطي الآن</button>
+          </div>
+
+          <!-- Developer Credentials -->
+          <div class="settings-card" style="border-color:rgba(142,68,173,0.3)">
+            <div class="settings-card-title" style="color:var(--purple)">👤 بيانات المطور</div>
+            <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px;font-size:12px">
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">اسم المستخدم</span><strong style="color:var(--purple)">readh</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">الصلاحية</span><span class="badge badge-purple">مطور</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text3)">الإصدار</span><strong style="color:var(--purple)">v2.0</strong></div>
+            </div>
+            <div style="margin-top:12px;background:var(--red-dim);border:1px solid var(--red2);border-radius:var(--radius-sm);padding:10px;font-size:11px;color:var(--red2)">
+              🔒 بيانات المطور ثابتة ولا يمكن تغييرها من واجهة النظام.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =================== NOTIFICATIONS =================== -->
+<div class="notif-panel-overlay" id="notifOverlay" onclick="toggleNotifPanel()"></div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header">
+    <div style="font-size:15px;font-weight:800">🔔 الإشعارات</div>
+    <div style="display:flex;gap:7px;align-items:center">
+      <button class="btn btn-secondary" style="padding:5px 10px;font-size:10px" onclick="markAllRead()">قراءة الكل</button>
+      <button class="modal-close" onclick="toggleNotifPanel()">✕</button>
+    </div>
+  </div>
+  <div class="notif-list" id="notifList"><div style="text-align:center;padding:40px 20px;color:var(--text3)"><div style="font-size:36px;margin-bottom:10px;opacity:.4">🔔</div><div style="font-size:12px">لا توجد إشعارات</div></div></div>
+  <div class="notif-footer"><button class="btn btn-secondary" onclick="clearAllNotifs()" style="width:100%;font-size:11px">🗑️ مسح الكل</button></div>
+</div>
+
+<!-- =================== MODALS =================== -->
+
+<!-- PART MODAL -->
+<div class="modal-overlay" id="partModal">
+  <div class="modal wide">
+    <div class="modal-header"><div class="modal-title" id="partModalTitle">إضافة قطعة غيار</div><button class="modal-close" onclick="closeModal('partModal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-field full"><label>اسم القطعة *</label><input type="text" id="pName" placeholder="مثال: فلتر زيت Q50"></div>
+      <div class="form-field"><label>رقم القطعة / الكود</label><input type="text" id="pBarcode" placeholder="Part No."></div>
+      <div class="form-field"><label>التصنيف</label><select id="pCategory"></select></div>
+      <div class="form-field"><label>موديل السيارة</label><select id="pCarModel"><option value="">عام — كل الموديلات</option></select></div>
+      <div class="form-field"><label>سعر الشراء (SAR)</label><input type="number" id="pBuyPrice" placeholder="0"></div>
+      <div class="form-field"><label>سعر البيع (SAR) *</label><input type="number" id="pSellPrice" placeholder="0"></div>
+      <div class="form-field"><label>سعر الجملة</label><input type="number" id="pWholesalePrice" placeholder="0"></div>
+      <div class="form-field"><label>الكمية في المخزون</label><input type="number" id="pQty" value="0"></div>
+      <div class="form-field"><label>حد التنبيه (أدنى كمية)</label><input type="number" id="pMinQty" value="3"></div>
+      <div class="form-field"><label>الوحدة</label><select id="pUnit"><option>قطعة</option><option>طقم</option><option>زوج</option><option>لتر</option><option>متر</option></select></div>
+      <div class="form-field"><label>الإيموجي</label><input type="text" id="pEmoji" placeholder="🔩" maxlength="4"></div>
+      <div class="form-field full"><label>ملاحظات</label><textarea id="pDesc" placeholder="مواصفات القطعة..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('partModal')">إلغاء</button><button class="btn btn-primary" onclick="savePart()">💾 حفظ القطعة</button></div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div class="modal-overlay" id="categoryModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-header"><div class="modal-title" id="catModalTitle">إضافة تصنيف</div><button class="modal-close" onclick="closeModal('categoryModal')">✕</button></div>
+    <div class="form-field"><label>اسم التصنيف *</label><input type="text" id="catName"></div>
+    <div class="form-field"><label>الإيموجي</label><input type="text" id="catEmoji" maxlength="4" placeholder="🔩"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('categoryModal')">إلغاء</button><button class="btn btn-primary" onclick="saveCategory()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal xl">
+    <div class="modal-header"><div class="modal-title" id="invModalTitle">فاتورة جديدة</div><button class="modal-close" onclick="closeModal('invoiceModal')">✕</button></div>
+    <div class="inv-type-tabs">
+      <div class="inv-type-tab active" onclick="setInvType('cash',this)">💵 نقدي</div>
+      <div class="inv-type-tab" onclick="setInvType('debt',this)">📋 دين</div>
+      <div class="inv-type-tab" onclick="setInvType('installment',this)">📅 تقسيط</div>
+      <div class="inv-type-tab" onclick="setInvType('service',this)">🔧 صيانة</div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>الزبون</label><select id="invCustomer"><option value="">بدون زبون</option></select></div>
+      <div class="form-field"><label>التاريخ</label><input type="date" id="invDate"></div>
+      <div class="form-field"><label>موديل السيارة</label><select id="invCarModel"><option value="">اختر الموديل</option></select></div>
+      <div class="form-field"><label>رقم اللوحة</label><input type="text" id="invPlate" placeholder="رقم اللوحة"></div>
+      <div class="form-field full" id="serviceFields" style="display:none">
+        <div class="form-row">
+          <div class="form-field"><label>نوع الصيانة</label><input type="text" id="invServiceType" placeholder="مثال: تغيير زيت، فحص إلكتروني..."></div>
+          <div class="form-field"><label>قراءة العداد (KM)</label><input type="number" id="invMileage" placeholder="0"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>إضافة قطعة / خدمة</label>
+      <div class="prod-search-wrap">
+        <input type="text" id="prodSearch" style="width:100%;padding:10px 13px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;" placeholder="🔍 ابحث عن قطعة أو اكتب خدمة..." oninput="searchProdForInv(this.value)" autocomplete="off">
+        <div class="prod-dropdown" id="prodDropdown" style="display:none"></div>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:6px;font-size:11px;padding:6px 12px" onclick="addCustomService()">+ إضافة خدمة يدوية</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="inv-items-table">
+        <thead><tr><th>الصنف</th><th style="width:75px">الكمية</th><th style="width:110px">السعر</th><th style="width:75px">خصم%</th><th style="width:110px">الإجمالي</th><th style="width:36px">✕</th></tr></thead>
+        <tbody id="invItemsBody"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px;font-size:12px">أضف قطع أو خدمات</td></tr></tbody>
+      </table>
+    </div>
+    <div class="inv-totals">
+      <div class="form-row four">
+        <div class="form-field" style="margin:0"><label>خصم إجمالي (%)</label><input type="number" id="invDiscount" value="0" oninput="calcInvTotal()"></div>
+        <div class="form-field" style="margin:0"><label>ضريبة (%)</label><input type="number" id="invTax" value="15" oninput="calcInvTotal()"></div>
+        <div class="form-field" style="margin:0"><label>مدفوع مسبقاً</label><input type="number" id="invPaid" value="0" oninput="calcInvTotal()"></div>
+        <div class="form-field" style="margin:0"><label>ملاحظات</label><input type="text" id="invNotes"></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="inv-total-row"><span>المجموع الفرعي</span><span id="invSubtotal">0</span></div>
+        <div class="inv-total-row"><span>الخصم</span><span id="invDiscountAmt" style="color:var(--red2)">-0</span></div>
+        <div class="inv-total-row"><span>الضريبة (VAT)</span><span id="invTaxAmt" style="color:var(--orange)">+0</span></div>
+        <div class="inv-total-row grand"><span>الإجمالي الكلي</span><span id="invGrandTotal">0</span></div>
+        <div class="inv-total-row"><span>المدفوع</span><span id="invPaidAmt" style="color:var(--green)">0</span></div>
+        <div class="inv-total-row"><span>المتبقي</span><span id="invRemaining" style="color:var(--red2)">0</span></div>
+      </div>
+    </div>
+    <div id="installmentOptions" style="display:none">
+      <div style="font-size:12px;font-weight:700;margin-bottom:9px;color:var(--red2)">📅 إعدادات التقسيط</div>
+      <div class="form-row three">
+        <div class="form-field" style="margin:0"><label>عدد الأقساط</label><input type="number" id="instCount" value="6" min="1" oninput="previewInstallments()"></div>
+        <div class="form-field" style="margin:0"><label>نوع القسط</label><select id="instType" onchange="previewInstallments()"><option value="monthly">شهري</option><option value="weekly">أسبوعي</option><option value="biweekly">نصف شهري</option></select></div>
+        <div class="form-field" style="margin:0"><label>تاريخ أول قسط</label><input type="date" id="instStart" oninput="previewInstallments()"></div>
+      </div>
+      <div id="instPreview" class="inst-schedule" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('invoiceModal')">إلغاء</button>
+      <button class="btn btn-purple" onclick="saveAndPrintInvoice()">🖨️ حفظ وطباعة</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAY INSTALLMENT MODAL -->
+<div class="modal-overlay" id="payInstModal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header"><div class="modal-title">دفع قسط</div><button class="modal-close" onclick="closeModal('payInstModal')">✕</button></div>
+    <div id="payInstInfo" style="margin-bottom:12px"></div>
+    <div id="instScheduleList" class="inst-schedule"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('payInstModal')">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- VIEW INVOICE MODAL -->
+<div class="modal-overlay" id="viewInvModal">
+  <div class="modal wide">
+    <div class="modal-header"><div class="modal-title">تفاصيل الفاتورة</div><button class="modal-close" onclick="closeModal('viewInvModal')">✕</button></div>
+    <div id="viewInvContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('viewInvModal')">إغلاق</button>
+      <button class="btn btn-purple" onclick="printCurrentInvoice()">🖨️ طباعة</button>
+      <button class="btn btn-danger" id="returnInvBtn">↩️ مرتجع</button>
+    </div>
+  </div>
+</div>
+
+<!-- TREASURY MODAL -->
+<div class="modal-overlay" id="treasuryModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-header"><div class="modal-title" id="trsModalTitle">إضافة حركة</div><button class="modal-close" onclick="closeModal('treasuryModal')">✕</button></div>
+    <div class="form-field"><label>النوع</label><select id="trsType"><option value="income">📥 دخل / قبض</option><option value="expense">📤 صرف / مصروف</option></select></div>
+    <div class="form-field"><label>المبلغ *</label><input type="number" id="trsAmount"></div>
+    <div class="form-field"><label>البيان *</label><input type="text" id="trsDesc"></div>
+    <div class="form-field"><label>التاريخ</label><input type="date" id="trsDate"></div>
+    <div class="form-field"><label>مرجع</label><input type="text" id="trsRef"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('treasuryModal')">إلغاء</button><button class="btn btn-primary" onclick="saveTreasuryEntry()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header"><div class="modal-title" id="userModalTitle">إضافة مستخدم</div><button class="modal-close" onclick="closeModal('userModal')">✕</button></div>
+    <div class="form-field"><label>الاسم الكامل *</label><input type="text" id="uFullName"></div>
+    <div class="form-field"><label>اسم المستخدم *</label><input type="text" id="uUsername"></div>
+    <div class="form-field"><label>كلمة المرور *</label><input type="password" id="uPassword"></div>
+    <div class="form-field"><label>الصلاحية</label>
+      <select id="uRole">
+        <option value="cashier">كاشير — البيع فقط</option>
+        <option value="stock">مسؤول مخزون — المخزون والقطع</option>
+        <option value="technician">فني — الصيانة وعرض الفواتير</option>
+        <option value="manager">مدير — صلاحيات كاملة</option>
+      </select>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('userModal')">إلغاء</button><button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal-overlay" id="customerModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header"><div class="modal-title" id="custModalTitle">إضافة زبون</div><button class="modal-close" onclick="closeModal('customerModal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-field"><label>الاسم *</label><input type="text" id="custName"></div>
+      <div class="form-field"><label>رقم الهاتف</label><input type="text" id="custPhone"></div>
+      <div class="form-field"><label>موديل السيارة</label><select id="custCarModel"><option value="">اختر الموديل</option></select></div>
+      <div class="form-field"><label>رقم اللوحة</label><input type="text" id="custPlate"></div>
+      <div class="form-field"><label>سنة الصنع</label><input type="number" id="custYear" placeholder="مثال: 2019"></div>
+      <div class="form-field"><label>اللون</label><input type="text" id="custColor" placeholder="مثال: أسود"></div>
+      <div class="form-field full"><label>ملاحظات</label><textarea id="custNotes"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('customerModal')">إلغاء</button><button class="btn btn-primary" onclick="saveCustomer()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-overlay" id="confirmDialog">
+  <div class="modal" style="width:360px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <div class="modal-title" style="margin-bottom:8px">تأكيد</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6" id="confirmMsg"></div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('confirmDialog')">إلغاء</button>
+      <button class="btn btn-danger" id="confirmAction">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- =================== JS =================== -->
+<script>
+// ============================================================
+//  STORE
+// ============================================================
+const DB={save(k,v){try{localStorage.setItem('tc_'+k,JSON.stringify(v));}catch(e){}},load(k,d){try{const v=localStorage.getItem('tc_'+k);return v?JSON.parse(v):d;}catch(e){return d;}}};
+
+// Car models
+const DEFAULT_MODELS=[
+  {id:'g25',name:'G25',brand:'Infiniti',emoji:'🏎️'},
+  {id:'g35',name:'G35',brand:'Infiniti',emoji:'🏎️'},
+  {id:'g37',name:'G37',brand:'Infiniti',emoji:'🏎️'},
+  {id:'q50',name:'Q50',brand:'Infiniti',emoji:'🚗'},
+  {id:'q60',name:'Q60',brand:'Infiniti',emoji:'🚗'},
+  {id:'q70',name:'Q70',brand:'Infiniti',emoji:'🚗'},
+  {id:'qx50',name:'QX50',brand:'Infiniti',emoji:'🚙'},
+  {id:'qx60',name:'QX60',brand:'Infiniti',emoji:'🚙'},
+  {id:'qx80',name:'QX80',brand:'Infiniti',emoji:'🚙'},
+  {id:'fx35',name:'FX35',brand:'Infiniti',emoji:'🚙'},
+  {id:'ex37',name:'EX37',brand:'Infiniti',emoji:'🚗'},
+  {id:'altima',name:'Altima',brand:'Nissan',emoji:'🚗'},
+  {id:'maxima',name:'Maxima',brand:'Nissan',emoji:'🚗'},
+  {id:'patrol',name:'Patrol',brand:'Nissan',emoji:'🚙'},
+  {id:'pathfinder',name:'Pathfinder',brand:'Nissan',emoji:'🚙'},
+  {id:'370z',name:'370Z',brand:'Nissan',emoji:'🏎️'},
+  {id:'other',name:'أخرى',brand:'عام',emoji:'🔧'},
+];
+
+const DEFAULT_CATS=[
+  {id:'engine',name:'المحرك',emoji:'⚙️'},
+  {id:'brakes',name:'الفرامل',emoji:'🔴'},
+  {id:'suspension',name:'التعليق',emoji:'🔩'},
+  {id:'electrical',name:'الكهرباء',emoji:'⚡'},
+  {id:'cooling',name:'التبريد',emoji:'❄️'},
+  {id:'transmission',name:'ناقل الحركة',emoji:'🔧'},
+  {id:'exhaust',name:'العادم',emoji:'💨'},
+  {id:'body',name:'الهيكل والبدي',emoji:'🚘'},
+  {id:'filters',name:'الفلاتر',emoji:'🌀'},
+  {id:'oils',name:'الزيوت والسوائل',emoji:'🛢️'},
+  {id:'service',name:'خدمة وصيانة',emoji:'🔨'},
+];
+
+let data={
+  appName:DB.load('appName','Tork Center'),
+  phone:DB.load('phone',''),address:DB.load('address',''),
+  currency:DB.load('currency','SAR'),taxRate:DB.load('taxRate',15),
+  printType:DB.load('printType','a4'),
+  firebaseConfig:DB.load('firebaseConfig',null),
+  carModels:DB.load('carModels',DEFAULT_MODELS),
+  users:DB.load('users',[{id:'u1',fullName:'المدير',username:'admin',password:'admin123',role:'manager',createdAt:new Date().toISOString()}]),
+  categories:DB.load('categories',DEFAULT_CATS),
+  parts:DB.load('parts',[]),
+  customers:DB.load('customers',[]),
+  invoices:DB.load('invoices',[]),
+  returns:DB.load('returns',[]),
+  treasury:DB.load('treasury',[]),
+  activities:DB.load('activities',[]),
+};
+
+const DEV={id:'dev0',fullName:'readh — Developer',username:'readh',password:'readh1999',role:'developer'};
+let state={currentUser:null,currentPage:'dashboard',editingId:null,invType:'cash',invItems:[],currentInvId:null,fbApp:null,fbDb:null,fbConnected:false};
+let notifications=DB.load('notifications',[]);
+let notifOpen=false;
+
+// ============================================================
+//  INIT
+// ============================================================
+function init(){
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
+  if(data.firebaseConfig)initFirebase(data.firebaseConfig);
+}
+init();
+
+function resetSetup(){
+  if(confirm('إعادة إعداد النظام؟ بياناتك ستبقى محفوظة.')){
+    localStorage.removeItem('tc_firebaseConfig');
+    data.firebaseConfig=null;location.reload();
+  }
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginError');
+  if(u===DEV.username&&p===DEV.password){loginSuccess(DEV);return;}
+  const found=data.users.find(x=>x.username===u&&x.password===p);
+  if(found){loginSuccess(found);return;}
+  err.style.display='block';document.getElementById('loginPass').value='';
+  setTimeout(()=>err.style.display='none',3000);
+}
+function loginSuccess(user){
+  state.currentUser=user;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('sidebarUserName').textContent=user.fullName;
+  document.getElementById('sidebarUserRole').textContent=getRoleLabel(user.role);
+  document.getElementById('sidebarUserAvatar').textContent=user.fullName.charAt(0);
+  if(user.role!=='manager'&&user.role!=='developer')document.getElementById('navAdmin').style.display='none';
+  if(user.role==='developer')document.getElementById('navDeveloper').style.display='block';
+  else document.getElementById('navDeveloper').style.display='none';
+  navigate('dashboard');logActivity('دخول: '+user.fullName);updateBadges();updateNotifBadge();
+  setTimeout(checkLocalAlerts,1500);
+  setTimeout(checkAutoBackup,2000);
+  setTimeout(checkAutoPasswordRotation,3000);
+}
+function doLogout(){state.currentUser=null;document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';}
+function getRoleLabel(r){return{manager:'مدير',cashier:'كاشير',stock:'مسؤول مخزون',technician:'فني',developer:'مطور'}[r]||r;}
+function getRoleBadge(r){return{manager:'badge-red',cashier:'badge-blue',stock:'badge-green',technician:'badge-orange',developer:'badge-purple'}[r]||'badge-silver';}
+function canDo(a){const r=state.currentUser?.role;if(r==='developer'||r==='manager')return true;if(r==='cashier'&&['add_invoice'].includes(a))return true;if(r==='stock'&&['add_part','edit_part'].includes(a))return true;if(r==='technician'&&['add_invoice','view_invoices'].includes(a))return true;return false;}
+
+// ============================================================
+//  FIREBASE
+// ============================================================
+function parseConfig(raw){try{let s=raw.trim();if(s.startsWith('const')||s.includes('firebaseConfig')){const m=s.match(/\{[\s\S]*\}/);if(m)s=m[0];}s=s.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,'$1"$2":').replace(/'/g,'"');return JSON.parse(s);}catch(e){try{return JSON.parse(raw);}catch(e2){return null;}}}
+async function initFirebase(cfg){
+  try{
+    if(!cfg?.databaseURL){return;}
+    const ex=firebase.apps.find(a=>a.name==='torkApp');
+    state.fbApp=ex||firebase.initializeApp(cfg,'torkApp');
+    state.fbDb=firebase.database(state.fbApp);
+    await state.fbDb.ref('.info/connected').once('value');
+    state.fbConnected=true;updateSyncUI(true);
+    toast('✅ متصل بـ Firebase','success');
+  }catch(e){state.fbConnected=false;updateSyncUI(false);}
+}
+function updateSyncUI(on){
+  const dot=document.getElementById('sidebarSyncDot');const txt=document.getElementById('sidebarSyncTxt');
+  if(dot){dot.classList.toggle('off',!on);}
+  if(txt){txt.textContent=on?'متصل بالإنترنت':'غير متصل';txt.style.color=on?'var(--green)':'var(--text3)';}
+  const fbStatus=document.getElementById('fbConfigStatus');
+  const fbInfo=document.getElementById('fbConfigInfo');
+  if(fbStatus)fbStatus.innerHTML=on?`<span class="sync-dot"></span><span style="color:var(--green)">متصل بـ Firebase ✅</span>`:`<span class="sync-dot off"></span><span style="color:var(--orange)">غير متصل</span>`;
+  if(fbInfo&&data.firebaseConfig)fbInfo.textContent=`المشروع: ${data.firebaseConfig.projectId||'—'}`;
+}
+async function applyFirebaseConfig(){
+  const raw=document.getElementById('settingFirebaseConfig').value;
+  if(!raw.trim()){toast('أدخل إعداد Firebase','error');return;}
+  const cfg=parseConfig(raw);
+  if(!cfg){toast('صيغة غير صحيحة','error');return;}
+  toast('جاري الاتصال...','info');
+  await initFirebase(cfg);
+  if(state.fbConnected){data.firebaseConfig=cfg;DB.save('firebaseConfig',cfg);renderSettings();}
+  else toast('فشل الاتصال — تحقق من الإعداد ووجود databaseURL','error');
+}
+function disconnectFirebase(){confirm2('قطع الاتصال بـ Firebase؟',()=>{state.fbConnected=false;state.fbApp=null;state.fbDb=null;data.firebaseConfig=null;DB.save('firebaseConfig',null);updateSyncUI(false);toast('تم قطع الاتصال','info');});}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function navigate(page){
+  const adminPages=['users','settings','backup'];
+  const devPages=['developer'];
+  if(adminPages.includes(page)&&state.currentUser?.role!=='manager'&&state.currentUser?.role!=='developer'){toast('لا تملك صلاحية','error');return;}
+  if(devPages.includes(page)&&state.currentUser?.role!=='developer'){toast('لوحة المطور: للمطور فقط','error');return;}
+  state.currentPage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  const nav=document.querySelector(`.nav-item[onclick="navigate('${page}')"]`);if(nav)nav.classList.add('active');
+  const titles={dashboard:'لوحة التحكم',parts:'قطع الغيار',categories:'التصنيفات',invoices:'الفواتير',installments:'الأقساط',customers:'الزبائن وسياراتهم',returns:'المرتجعات',treasury:'الصندوق',reports:'التقارير',users:'المستخدمون',settings:'الإعدادات',backup:'النسخ الاحتياطي',developer:'🛠️ لوحة المطور'};
+  document.getElementById('topbarTitle').textContent=titles[page]||page;
+  renderTopbarActions(page);renderPage(page);
+}
+function renderTopbarActions(page){
+  const w=document.getElementById('topbarActions');
+  w.innerHTML='';
+  // Theme toggle always present
+  const themeBtn=document.createElement('div');
+  themeBtn.className='theme-toggle-btn';themeBtn.id='themeToggleBtn';themeBtn.title='تبديل المظهر';
+  themeBtn.onclick=toggleTheme;
+  themeBtn.textContent=document.body.classList.contains('light-mode')?'☀️':'🌙';
+  w.appendChild(themeBtn);
+  if(page==='parts'&&canDo('add_part'))w.innerHTML+=`<button class="topbar-btn primary" onclick="openPartModal()">+ إضافة قطعة</button>`;
+  if(page==='categories')w.innerHTML+=`<button class="topbar-btn primary" onclick="openCategoryModal()">+ تصنيف</button>`;
+  if(page==='invoices')w.innerHTML+=`<button class="topbar-btn primary" onclick="openInvoiceModal()">+ فاتورة جديدة</button>`;
+  if(page==='customers')w.innerHTML+=`<button class="topbar-btn primary" onclick="openCustomerModal()">+ إضافة زبون</button>`;
+  if(page==='treasury'){w.innerHTML+=`<button class="topbar-btn green-btn" onclick="openTreasuryModal('income')">📥 دخل</button>`;w.innerHTML+=`<button class="topbar-btn" onclick="openTreasuryModal('expense')">📤 صرف</button>`;}
+  if(page==='users')w.innerHTML+=`<button class="topbar-btn primary" onclick="openUserModal()">+ مستخدم</button>`;
+  const bell=document.getElementById('notifBell');
+  if(bell)w.appendChild(bell);
+  else{const b=document.createElement('div');b.id='notifBell';b.className='notif-btn';b.title='الإشعارات';b.onclick=toggleNotifPanel;b.innerHTML='🔔<span class="notif-count" id="notifCount" style="display:none">0</span>';w.appendChild(b);}
+  updateNotifBadge();
+}
+function renderPage(page){
+  const m={dashboard:renderDashboard,parts:()=>renderParts(data.parts),categories:renderCategories,invoices:()=>renderInvoices(data.invoices),installments:()=>renderInstallments(data.invoices.filter(i=>i.type==='installment')),customers:renderCustomers,returns:renderReturns,treasury:()=>renderTreasury(data.treasury),reports:()=>renderReportsPage(),users:renderUsers,settings:renderSettings,backup:renderBackupPage,developer:renderDeveloperPanel};
+  if(m[page])m[page]();
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+function renderDashboard(){
+  const invs=data.invoices.filter(i=>!i.isReturn);
+  const today=new Date().toISOString().slice(0,10);
+  const todaySales=invs.filter(i=>i.date===today).reduce((s,i)=>s+(i.grandTotal||0),0);
+  const totalSales=invs.reduce((s,i)=>s+(i.grandTotal||0),0);
+  const balance=data.treasury.reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);
+  const debt=invs.filter(i=>!i.fullyPaid&&(i.type==='debt'||i.type==='installment')).reduce((s,i)=>s+(i.remaining||0),0);
+  const low=data.parts.filter(p=>p.qty<=(p.minQty||3)).length;
+  const todayInst=getTodayDueInst();
+  document.getElementById('dashStats').innerHTML=`
+    <div class="stat-card red"><div class="stat-icon">💰</div><div class="stat-label">مبيعات اليوم</div><div class="stat-value red">${fmtNum(todaySales)}</div></div>
+    <div class="stat-card green"><div class="stat-icon">💵</div><div class="stat-label">رصيد الصندوق</div><div class="stat-value green">${fmtNum(balance)}</div></div>
+    <div class="stat-card silver"><div class="stat-icon">📊</div><div class="stat-label">إجمالي المبيعات</div><div class="stat-value silver">${fmtNum(totalSales)}</div></div>
+    <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-label">الديون المستحقة</div><div class="stat-value gold">${fmtNum(debt)}</div></div>
+    <div class="stat-card orange"><div class="stat-icon">🔩</div><div class="stat-label">مخزون منخفض</div><div class="stat-value orange">${low}</div></div>
+    <div class="stat-card blue"><div class="stat-icon">📅</div><div class="stat-label">أقساط اليوم</div><div class="stat-value blue">${todayInst.length}</div></div>`;
+  document.getElementById('dashAlerts').innerHTML=todayInst.length>0?`<div class="alert-banner warning">📅 ${todayInst.length} قسط مستحق اليوم</div>`:''+(low>0?`<div class="alert-banner danger">🔩 ${low} قطعة بمخزون منخفض تحتاج تعبئة</div>`:'');
+  const act=document.getElementById('recentActivity');
+  act.innerHTML=data.activities.length===0?'<div class="empty-state"><div class="ei">📋</div><p>لا توجد نشاطات</p></div>':data.activities.slice(-8).reverse().map(a=>`<div class="activity-item"><div class="activity-dot" style="background:var(--red2)"></div><div class="activity-text">${a.text}</div><div class="activity-time">${fmtDate(a.date)}</div></div>`).join('');
+  const lsp=data.parts.filter(p=>p.qty<=(p.minQty||3));
+  document.getElementById('lowStockList').innerHTML=lsp.length===0?'<div class="empty-state"><div class="ei">✅</div><p>كل القطع بمخزون كافٍ</p></div>':lsp.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 9px;border-radius:var(--radius-sm);transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><div><div style="font-size:12px;font-weight:700">${p.emoji||'🔩'} ${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.carModel||'عام'}</div></div><div style="color:var(--red2);font-weight:700;font-size:11px">⚠️ ${p.qty}</div></div>`).join('');
+  document.getElementById('todayInstList').innerHTML=todayInst.length===0?'<div class="empty-state"><div class="ei">✅</div><p>لا توجد أقساط مستحقة</p></div>':todayInst.map(x=>`<div style="display:flex;justify-content:space-between;padding:7px 9px"><div style="font-size:12px;font-weight:600">${x.customerName}</div><div style="color:var(--gold);font-weight:700;font-size:12px">${fmtNum(x.amount)} ${data.currency}</div></div>`).join('');
+  const ri=invs.slice(-5).reverse();
+  document.getElementById('recentInvoices').innerHTML=ri.length===0?'<div class="empty-state"><div class="ei">🧾</div><p>لا توجد فواتير</p></div>':ri.map(i=>`<div class="activity-item"><div class="activity-dot" style="background:${invTypeColor(i.type)}"></div><div class="activity-text">${invTypeLabel(i.type)} — ${i.customerName||'زبون'} ${i.carModel?'('+i.carModel+')':''}</div><div class="activity-time">${fmtNum(i.grandTotal)} ${data.currency}</div></div>`).join('');
+}
+function getTodayDueInst(){
+  const today=new Date().toISOString().slice(0,10);const res=[];
+  data.invoices.filter(i=>i.type==='installment'&&i.installments).forEach(inv=>{
+    const c=data.customers.find(x=>x.id===inv.customerId);
+    inv.installments.forEach((inst,idx)=>{if(!inst.paid&&inst.dueDate===today)res.push({invId:inv.id,customerName:c?.name||'زبون',instNum:idx+1,amount:inst.amount});});
+  });return res;
+}
+function updateBadges(){
+  const di=data.invoices.filter(i=>(i.type==='debt'||i.type==='installment')&&!i.fullyPaid&&!i.isReturn);
+  const db=document.getElementById('debtBadge');if(db){db.style.display=di.length>0?'flex':'none';db.textContent=di.length;}
+  const ti=getTodayDueInst();const ib=document.getElementById('instBadge');
+  if(ib){ib.style.display=ti.length>0?'flex':'none';ib.textContent=ti.length;}
+}
+
+// ============================================================
+//  PARTS (Products)
+// ============================================================
+function renderParts(parts){
+  // Car model filter
+  const mf=document.getElementById('carModelsFilter');
+  mf.innerHTML=`<div class="car-model-chip active" onclick="filterByModel(null,this)"><div class="model-icon">🔲</div><div class="model-name">الكل</div><div class="model-brand">(${data.parts.length})</div></div>`+
+    data.carModels.map(m=>{const cnt=data.parts.filter(p=>p.carModel===m.id).length;return`<div class="car-model-chip" onclick="filterByModel('${m.id}',this)"><div class="model-icon">${m.emoji}</div><div class="model-name">${m.name}</div><div class="model-brand">${m.brand} (${cnt})</div></div>`;}).join('');
+  // Cat filter
+  const cf=document.getElementById('partsCatFilter');
+  cf.innerHTML=`<div class="cat-chip active" onclick="filterByCat(null,this)">🔲 الكل</div>`+data.categories.map(c=>`<div class="cat-chip" onclick="filterByCat('${c.id}',this)">${c.emoji} ${c.name}</div>`).join('');
+  renderPartsTable(parts);
+}
+function renderPartsTable(parts){
+  const el=document.getElementById('partsTableBody');
+  if(!parts.length){el.innerHTML='<div class="empty-state"><div class="ei">🔩</div><p>لا توجد قطع غيار</p></div>';return;}
+  el.innerHTML=`<table><thead><tr><th>#</th><th>القطعة</th><th>الموديل</th><th>التصنيف</th><th>سعر البيع</th><th>المخزون</th><th>الحالة</th>${canDo('edit_part')?'<th>إجراءات</th>':''}</tr></thead><tbody>${
+    parts.map((p,i)=>{const cat=data.categories.find(c=>c.id===p.categoryId);const model=data.carModels.find(m=>m.id===p.carModel);const low=p.qty<=(p.minQty||3);
+    return`<tr><td style="color:var(--text3)">${i+1}</td>
+    <td><div style="display:flex;align-items:center;gap:9px"><div class="td-img">${p.emoji||'🔩'}</div><div><div style="font-weight:700">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.barcode||''}</div></div></div></td>
+    <td>${model?`<span class="badge badge-red">${model.emoji} ${model.name}</span>`:'<span class="badge badge-silver">عام</span>'}</td>
+    <td>${cat?`<span class="badge badge-silver">${cat.emoji} ${cat.name}</span>`:'—'}</td>
+    <td style="font-weight:700;color:var(--red2)">${fmtNum(p.sellPrice)} ${data.currency}</td>
+    <td><span style="font-weight:700">${p.qty}</span> <span style="color:var(--text3);font-size:10px">${p.unit||'قطعة'}</span></td>
+    <td><span class="badge ${low?'badge-red':'badge-green'}">${low?'⚠️ منخفض':'✅ متوفر'}</span></td>
+    ${canDo('edit_part')?`<td><div class="row-actions"><button class="action-btn edit" onclick="editPart('${p.id}')">✏️</button><button class="action-btn del" onclick="deletePart('${p.id}')">🗑️</button></div></td>`:''}</tr>`;}).join('')}
+  </tbody></table>`;
+}
+function filterByModel(modelId,el){document.querySelectorAll('.car-model-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderPartsTable(modelId?data.parts.filter(p=>p.carModel===modelId):data.parts);}
+function filterByCat(catId,el){document.querySelectorAll('#partsCatFilter .cat-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderPartsTable(catId?data.parts.filter(p=>p.categoryId===catId):data.parts);}
+function searchParts(q){renderPartsTable(data.parts.filter(p=>p.name.includes(q)||(p.barcode||'').includes(q)));}
+
+function openPartModal(id=null){
+  state.editingId=id;document.getElementById('partModalTitle').textContent=id?'تعديل قطعة':'إضافة قطعة غيار';
+  const sel=document.getElementById('pCategory');sel.innerHTML='<option value="">اختر التصنيف</option>'+data.categories.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  const msel=document.getElementById('pCarModel');msel.innerHTML='<option value="">عام — كل الموديلات</option>'+data.carModels.map(m=>`<option value="${m.id}">${m.emoji} ${m.name} (${m.brand})</option>`).join('');
+  if(id){const p=data.parts.find(x=>x.id===id);if(p){document.getElementById('pName').value=p.name||'';document.getElementById('pBarcode').value=p.barcode||'';document.getElementById('pCategory').value=p.categoryId||'';document.getElementById('pCarModel').value=p.carModel||'';document.getElementById('pBuyPrice').value=p.buyPrice||0;document.getElementById('pSellPrice').value=p.sellPrice||0;document.getElementById('pWholesalePrice').value=p.wholesalePrice||0;document.getElementById('pQty').value=p.qty||0;document.getElementById('pMinQty').value=p.minQty||3;document.getElementById('pUnit').value=p.unit||'قطعة';document.getElementById('pEmoji').value=p.emoji||'';document.getElementById('pDesc').value=p.desc||'';}}
+  else{['pName','pBarcode','pDesc','pEmoji'].forEach(i=>document.getElementById(i).value='');['pBuyPrice','pSellPrice','pWholesalePrice'].forEach(i=>document.getElementById(i).value=0);document.getElementById('pQty').value=0;document.getElementById('pMinQty').value=3;}
+  openModal('partModal');
+}
+function savePart(){
+  const name=document.getElementById('pName').value.trim();if(!name){toast('أدخل اسم القطعة','error');return;}
+  const p={id:state.editingId||uid(),name,barcode:document.getElementById('pBarcode').value.trim(),categoryId:document.getElementById('pCategory').value,carModel:document.getElementById('pCarModel').value,buyPrice:+document.getElementById('pBuyPrice').value||0,sellPrice:+document.getElementById('pSellPrice').value||0,wholesalePrice:+document.getElementById('pWholesalePrice').value||0,qty:+document.getElementById('pQty').value||0,minQty:+document.getElementById('pMinQty').value||3,unit:document.getElementById('pUnit').value,emoji:document.getElementById('pEmoji').value||'🔩',desc:document.getElementById('pDesc').value.trim(),createdAt:new Date().toISOString()};
+  if(state.editingId){const idx=data.parts.findIndex(x=>x.id===state.editingId);data.parts[idx]=p;}else data.parts.push(p);
+  DB.save('parts',data.parts);closeModal('partModal');renderParts(data.parts);logActivity((state.editingId?'تعديل':'إضافة')+' قطعة: '+name);toast('تم حفظ القطعة','success');
+}
+function editPart(id){openPartModal(id);}
+function deletePart(id){const p=data.parts.find(x=>x.id===id);confirm2(`حذف "${p?.name}"؟`,()=>{data.parts=data.parts.filter(x=>x.id!==id);DB.save('parts',data.parts);renderParts(data.parts);toast('تم الحذف','info');});}
+
+// ============================================================
+//  CATEGORIES
+// ============================================================
+function renderCategories(){
+  const el=document.getElementById('categoriesBody');
+  if(!data.categories.length){el.innerHTML='<div class="empty-state"><div class="ei">🏷️</div><p>لا توجد تصنيفات</p></div>';return;}
+  el.innerHTML=`<table><thead><tr><th>#</th><th>التصنيف</th><th>عدد القطع</th><th>إجراءات</th></tr></thead><tbody>${data.categories.map((c,i)=>{const cnt=data.parts.filter(p=>p.categoryId===c.id).length;return`<tr><td style="color:var(--text3)">${i+1}</td><td><span style="font-size:16px">${c.emoji}</span> <strong>${c.name}</strong></td><td><span class="badge badge-blue">${cnt}</span></td><td><div class="row-actions"><button class="action-btn edit" onclick="editCategory('${c.id}')">✏️</button><button class="action-btn del" onclick="deleteCategory('${c.id}')">🗑️</button></div></td></tr>`;}).join('')}</tbody></table>`;
+}
+function openCategoryModal(id=null){state.editingId=id;document.getElementById('catModalTitle').textContent=id?'تعديل':'إضافة تصنيف';if(id){const c=data.categories.find(x=>x.id===id);document.getElementById('catName').value=c?.name||'';document.getElementById('catEmoji').value=c?.emoji||'';}else{document.getElementById('catName').value='';document.getElementById('catEmoji').value='';}openModal('categoryModal');}
+function saveCategory(){const name=document.getElementById('catName').value.trim();if(!name){toast('أدخل الاسم','error');return;}const c={id:state.editingId||uid(),name,emoji:document.getElementById('catEmoji').value||'🔩'};if(state.editingId){const idx=data.categories.findIndex(x=>x.id===state.editingId);data.categories[idx]=c;}else data.categories.push(c);DB.save('categories',data.categories);closeModal('categoryModal');renderCategories();toast('تم','success');}
+function editCategory(id){openCategoryModal(id);}
+function deleteCategory(id){confirm2('حذف هذا التصنيف؟',()=>{data.categories=data.categories.filter(x=>x.id!==id);DB.save('categories',data.categories);renderCategories();toast('تم','info');});}
+
+// ============================================================
+//  CAR MODELS
+// ============================================================
+function addCarModel(){
+  const n=document.getElementById('newModelInput').value.trim();if(!n)return;
+  const m={id:uid(),name:n,brand:'Infiniti',emoji:'🚗'};
+  data.carModels.push(m);DB.save('carModels',data.carModels);
+  document.getElementById('newModelInput').value='';
+  renderSettingsModelsList();toast('تم إضافة الموديل','success');
+}
+function renderSettingsModelsList(){
+  const el=document.getElementById('settingsModelsList');if(!el)return;
+  el.innerHTML=data.carModels.map(m=>`<div class="car-model-chip" style="position:relative">
+    <div class="model-icon">${m.emoji}</div><div class="model-name">${m.name}</div><div class="model-brand">${m.brand}</div>
+    ${m.id!==DEFAULT_MODELS.find(x=>x.id===m.id)?.id||true?`<button onclick="deleteModel('${m.id}')" style="position:absolute;top:-4px;left:-4px;background:var(--red-dim);border:1px solid var(--red2);color:var(--red2);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:8px;padding:0">✕</button>`:''}
+  </div>`).join('');
+}
+function deleteModel(id){data.carModels=data.carModels.filter(x=>x.id!==id);DB.save('carModels',data.carModels);renderSettingsModelsList();}
+
+// ============================================================
+//  INVOICES
+// ============================================================
+function invTypeLabel(t){return{cash:'💵 نقدي',debt:'📋 دين',installment:'📅 تقسيط',service:'🔧 صيانة'}[t]||t;}
+function invTypeColor(t){return{cash:'var(--green)',debt:'var(--red2)',installment:'var(--gold)',service:'var(--blue)'}[t]||'var(--text3)';}
+function invTypeBadge(t){return{cash:'badge-green',debt:'badge-red',installment:'badge-gold',service:'badge-blue'}[t]||'badge-silver';}
+
+function renderInvoices(invs){
+  const el=document.getElementById('invoicesTableBody');
+  if(!invs.length){el.innerHTML='<div class="empty-state"><div class="ei">🧾</div><p>لا توجد فواتير</p></div>';return;}
+  el.innerHTML=`<table><thead><tr><th>#</th><th>التاريخ</th><th>الزبون</th><th>الموديل</th><th>النوع</th><th>الإجمالي</th><th>المتبقي</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${
+    invs.slice().reverse().map(inv=>{const paid=inv.fullyPaid||inv.type==='cash'||inv.type==='service';
+    return`<tr>
+    <td style="font-weight:700;color:var(--red2)">#${inv.invNum||''}</td>
+    <td style="color:var(--text3);font-size:11px">${inv.date||''}</td>
+    <td><div style="font-weight:600">${inv.customerName||'<span style="color:var(--text3)">—</span>'}</div>${inv.plate?`<div style="font-size:10px;color:var(--text3)">${inv.plate}</div>`:''}</td>
+    <td>${inv.carModel?`<span class="badge badge-red">${inv.carModel}</span>`:'—'}</td>
+    <td><span class="badge ${invTypeBadge(inv.type)}">${invTypeLabel(inv.type)}</span>${inv.isReturn?'<span class="badge badge-red" style="margin-right:4px;font-size:9px">↩️</span>':''}</td>
+    <td style="font-weight:700">${fmtNum(inv.grandTotal)} ${data.currency}</td>
+    <td style="color:var(--red2)">${fmtNum(inv.remaining||0)}</td>
+    <td><span class="badge ${paid?'badge-green':'badge-red'}">${paid?'✅ مسدد':'⏳ معلق'}</span></td>
+    <td><div class="row-actions">
+      <button class="action-btn view" onclick="viewInvoice('${inv.id}')">👁️</button>
+      <button class="action-btn print" onclick="printInvoice('${inv.id}')">🖨️</button>
+      ${inv.type==='installment'&&!inv.fullyPaid?`<button class="action-btn pay" onclick="openPayInst('${inv.id}')">💳</button>`:''}
+      ${inv.type==='debt'&&!inv.fullyPaid?`<button class="action-btn pay" onclick="payDebt('${inv.id}')">💳</button>`:''}
+    </div></td></tr>`;}).join('')}
+  </tbody></table>`;
+}
+function filterInvoices(type,el){document.querySelectorAll('#invFilterTabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderInvoices(type==='all'?data.invoices:data.invoices.filter(i=>i.type===type));}
+function searchInvoices(q){renderInvoices(data.invoices.filter(i=>(i.customerName||'').includes(q)||(i.invNum||'').toString().includes(q)||(i.plate||'').includes(q)));}
+
+function openInvoiceModal(){
+  state.invItems=[];state.invType='cash';state.editingId=null;
+  const sel=document.getElementById('invCustomer');sel.innerHTML='<option value="">بدون زبون</option>'+data.customers.map(c=>`<option value="${c.id}">${c.name}${c.plate?' — '+c.plate:''}</option>`).join('');
+  const msel=document.getElementById('invCarModel');msel.innerHTML='<option value="">اختر الموديل</option>'+data.carModels.map(m=>`<option value="${m.name}">${m.emoji} ${m.name} (${m.brand})</option>`).join('');
+  document.getElementById('invDate').value=new Date().toISOString().slice(0,10);
+  ['invDiscount','invPaid'].forEach(i=>document.getElementById(i).value=0);
+  document.getElementById('invTax').value=data.taxRate||15;
+  document.getElementById('invNotes').value='';document.getElementById('invPlate').value='';
+  document.getElementById('invServiceType') && (document.getElementById('invServiceType').value='');
+  document.getElementById('invMileage') && (document.getElementById('invMileage').value='');
+  document.querySelectorAll('.inv-type-tab').forEach(t=>t.classList.remove('active'));document.querySelector('.inv-type-tab').classList.add('active');
+  document.getElementById('serviceFields').style.display='none';document.getElementById('installmentOptions').style.display='none';
+  const d=new Date();d.setMonth(d.getMonth()+1);document.getElementById('instStart').value=d.toISOString().slice(0,10);
+  renderInvItems();calcInvTotal();
+  // Auto-fill car model when customer selected
+  document.getElementById('invCustomer').onchange=function(){
+    const c=data.customers.find(x=>x.id===this.value);
+    if(c){if(c.carModel)document.getElementById('invCarModel').value=c.carModel;if(c.plate)document.getElementById('invPlate').value=c.plate;}
+  };
+  openModal('invoiceModal');
+}
+function setInvType(type,el){state.invType=type;document.querySelectorAll('.inv-type-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('serviceFields').style.display=type==='service'?'block':'none';document.getElementById('installmentOptions').style.display=type==='installment'?'block':'none';if(type==='installment')previewInstallments();calcInvTotal();}
+function searchProdForInv(q){const dd=document.getElementById('prodDropdown');if(!q){dd.style.display='none';return;}const res=data.parts.filter(p=>p.name.includes(q)||(p.barcode||'').includes(q)).slice(0,8);if(!res.length){dd.style.display='none';return;}dd.innerHTML=res.map(p=>`<div class="prod-drop-item" onclick="addPartToInv('${p.id}')"><span>${p.emoji||'🔩'}</span><div><div style="font-size:12px;font-weight:600">${p.name}</div><div style="font-size:10px;color:var(--text3)">${fmtNum(p.sellPrice)} ${data.currency} | متوفر: ${p.qty}</div></div></div>`).join('');dd.style.display='block';}
+document.addEventListener('click',e=>{if(!e.target.closest('.prod-search-wrap'))document.getElementById('prodDropdown').style.display='none';});
+function addPartToInv(pid){const p=data.parts.find(x=>x.id===pid);if(!p)return;const ex=state.invItems.find(i=>i.productId===pid);if(ex){ex.qty++;ex.total=ex.qty*ex.price*(1-ex.disc/100);}else state.invItems.push({productId:pid,name:p.name,emoji:p.emoji||'🔩',price:p.sellPrice,qty:1,disc:0,total:p.sellPrice,type:'part'});document.getElementById('prodSearch').value='';document.getElementById('prodDropdown').style.display='none';renderInvItems();calcInvTotal();if(state.invType==='installment')previewInstallments();}
+function addCustomService(){const name=prompt('اسم الخدمة:');if(!name?.trim())return;const price=+prompt('سعر الخدمة:')||0;state.invItems.push({productId:null,name:name.trim(),emoji:'🔧',price,qty:1,disc:0,total:price,type:'service'});renderInvItems();calcInvTotal();}
+function renderInvItems(){const body=document.getElementById('invItemsBody');if(!state.invItems.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:14px;font-size:12px">أضف قطع أو خدمات</td></tr>';return;}body.innerHTML=state.invItems.map((item,i)=>`<tr><td><div style="display:flex;align-items:center;gap:7px"><span>${item.emoji}</span><div><span style="font-weight:600">${item.name}</span><span class="badge ${item.type==='service'?'badge-blue':'badge-silver'}" style="margin-right:5px;font-size:9px">${item.type==='service'?'خدمة':'قطعة'}</span></div></div></td><td><input class="inv-item-input" type="number" value="${item.qty}" min="1" style="width:60px" onchange="updateItem(${i},'qty',this.value)"></td><td><input class="inv-item-input" type="number" value="${item.price}" min="0" style="width:100px" onchange="updateItem(${i},'price',this.value)"></td><td><input class="inv-item-input" type="number" value="${item.disc}" min="0" max="100" style="width:60px" onchange="updateItem(${i},'disc',this.value)"></td><td style="font-weight:700;color:var(--red2)">${fmtNum(item.total)}</td><td><button onclick="removeItem(${i})" style="background:none;border:none;color:var(--red2);cursor:pointer;font-size:14px">✕</button></td></tr>`).join('');}
+function updateItem(i,f,v){state.invItems[i][f]=+v;state.invItems[i].total=state.invItems[i].qty*state.invItems[i].price*(1-(state.invItems[i].disc/100));renderInvItems();calcInvTotal();if(state.invType==='installment')previewInstallments();}
+function removeItem(i){state.invItems.splice(i,1);renderInvItems();calcInvTotal();}
+function calcInvTotal(){const sub=state.invItems.reduce((s,i)=>s+i.total,0);const disc=+document.getElementById('invDiscount').value||0;const tax=+document.getElementById('invTax').value||0;const paid=+document.getElementById('invPaid').value||0;const da=sub*(disc/100);const ad=sub-da;const ta=ad*(tax/100);const grand=ad+ta;const rem=Math.max(0,grand-paid);document.getElementById('invSubtotal').textContent=fmtNum(sub)+' '+data.currency;document.getElementById('invDiscountAmt').textContent='-'+fmtNum(da)+' '+data.currency;document.getElementById('invTaxAmt').textContent='+'+fmtNum(ta)+' '+data.currency;document.getElementById('invGrandTotal').textContent=fmtNum(grand)+' '+data.currency;document.getElementById('invPaidAmt').textContent=fmtNum(paid)+' '+data.currency;document.getElementById('invRemaining').textContent=fmtNum(rem)+' '+data.currency;}
+function previewInstallments(){const grand=parseFloat(document.getElementById('invGrandTotal').textContent.replace(/[^\d.]/g,''))||0;const paid=+document.getElementById('invPaid').value||0;const rem=Math.max(0,grand-paid);const count=+document.getElementById('instCount').value||6;const type=document.getElementById('instType').value;const start=document.getElementById('instStart').value;if(!start||!rem){document.getElementById('instPreview').innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center">أدخل البيانات</div>';return;}const insts=generateInstallments(rem,count,type,start);document.getElementById('instPreview').innerHTML=insts.map((inst,i)=>`<div class="inst-row"><span style="font-weight:700">القسط ${i+1}</span><span style="color:var(--text3)">${inst.dueDate}</span><span style="color:var(--gold);font-weight:700">${fmtNum(inst.amount)} ${data.currency}</span></div>`).join('');}
+function generateInstallments(total,count,type,startDate){const insts=[];const per=Math.round(total/count);let d=new Date(startDate);for(let i=0;i<count;i++){const amt=i===count-1?total-(per*(count-1)):per;insts.push({dueDate:d.toISOString().slice(0,10),amount:amt,paid:false,paidDate:null});if(type==='monthly')d.setMonth(d.getMonth()+1);else if(type==='weekly')d.setDate(d.getDate()+7);else d.setDate(d.getDate()+14);}return insts;}
+
+function saveInvoice(andPrint=false){
+  if(!state.invItems.length){toast('أضف قطع أو خدمات','error');return;}
+  const grand=parseFloat(document.getElementById('invGrandTotal').textContent.replace(/[^\d.]/g,''))||0;
+  const paid=+document.getElementById('invPaid').value||0;const rem=Math.max(0,grand-paid);
+  const custId=document.getElementById('invCustomer').value;const cust=data.customers.find(c=>c.id===custId);
+  const carModel=document.getElementById('invCarModel').value;const plate=document.getElementById('invPlate').value;
+  // Deduct stock
+  state.invItems.forEach(item=>{if(item.productId){const p=data.parts.find(x=>x.id===item.productId);if(p)p.qty=Math.max(0,p.qty-item.qty);}});
+  DB.save('parts',data.parts);
+  const inv={id:uid(),invNum:data.invoices.length+1,type:state.invType,customerId:custId,customerName:cust?.name||'',carModel,plate,date:document.getElementById('invDate').value,serviceType:document.getElementById('invServiceType')?.value||'',mileage:document.getElementById('invMileage')?.value||'',items:[...state.invItems],discount:+document.getElementById('invDiscount').value||0,tax:+document.getElementById('invTax').value||0,notes:document.getElementById('invNotes').value,grandTotal:grand,paidAmount:paid,remaining:rem,fullyPaid:rem===0,createdAt:new Date().toISOString()};
+  if(state.invType==='installment'){inv.installments=generateInstallments(rem,+document.getElementById('instCount').value||6,document.getElementById('instType').value,document.getElementById('instStart').value);}
+  if(paid>0){data.treasury.push({id:uid(),type:'income',amount:paid,desc:`فاتورة #${inv.invNum} — ${cust?.name||'زبون'} ${carModel?'('+carModel+')':''}`,date:inv.date,ref:'INV-'+inv.invNum,createdAt:new Date().toISOString()});DB.save('treasury',data.treasury);}
+  data.invoices.push(inv);DB.save('invoices',data.invoices);
+  logActivity(`${invTypeLabel(state.invType)} #${inv.invNum} — ${fmtNum(grand)} ${data.currency} ${carModel?'('+carModel+')':''}`);
+  closeModal('invoiceModal');renderInvoices(data.invoices);updateBadges();
+  toast('تم حفظ الفاتورة ✅','success');
+  if(andPrint)printInvoice(inv.id);
+  return inv;
+}
+function saveAndPrintInvoice(){saveInvoice(true);}
+
+function viewInvoice(id){const inv=data.invoices.find(x=>x.id===id);if(!inv)return;state.currentInvId=id;document.getElementById('viewInvContent').innerHTML=buildInvPreview(inv);document.getElementById('returnInvBtn').onclick=()=>createReturn(id);document.getElementById('returnInvBtn').style.display=inv.isReturn?'none':'flex';openModal('viewInvModal');}
+function printCurrentInvoice(){if(state.currentInvId)printInvoice(state.currentInvId);}
+function printInvoice(id){const inv=data.invoices.find(x=>x.id===id);if(!inv)return;const w=window.open('','_blank','width=900,height=700');w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>Tork Center — Receipt #${inv.invNum}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Cairo',sans-serif;background:white;padding:24px;color:#111;max-width:800px;margin:0 auto;}</style></head><body>${buildTorkInvoiceHTML(inv)}<script>window.onload=function(){window.print();setTimeout(()=>window.close(),800);}<\/script></body></html>`);w.document.close();}
+function buildInvPreview(inv){return`<div style="padding:8px;background:white">${buildTorkInvoiceHTML(inv)}</div>`;}
+function buildTorkInvoiceHTML(inv){
+  const cust=data.customers.find(c=>c.id===inv.customerId);
+  const sub=inv.items.reduce((s,i)=>s+i.total,0);
+  const da=sub*((inv.discount||0)/100);
+  const afterDisc=sub-da;
+  const ta=afterDisc*((inv.tax||0)/100);
+  const grand=inv.grandTotal;
+  const cur=data.currency||'SAR';
+
+  // Minimum 7 rows like the template
+  const minRows=7;
+  const itemRows=inv.items.map((it,i)=>`
+    <tr>
+      <td style="padding:9px 14px;border-bottom:1px solid #e0e0e0;font-size:13px;text-align:right">
+        ${it.name}${it.type==='service'?` <span style="background:#e8f4fb;color:#2471a3;padding:1px 7px;border-radius:10px;font-size:10px">خدمة</span>`:''}
+        <span style="color:#bbb;font-size:11px;margin-right:8px">${i+1}</span>
+      </td>
+      <td style="padding:9px 10px;border-bottom:1px solid #e0e0e0;text-align:center;font-size:13px">${it.qty}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #e0e0e0;text-align:center;font-size:13px">${fmtNum(it.price)}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #e0e0e0;text-align:center;font-weight:700;font-size:13px">${fmtNum(it.total)}</td>
+    </tr>`).join('');
+  const emptyRows=Array.from({length:Math.max(0,minRows-inv.items.length)},(_,i)=>`
+    <tr style="height:38px">
+      <td style="padding:9px 14px;border-bottom:1px solid #e0e0e0;font-size:12px;color:#ccc;text-align:right">${inv.items.length+i+1}</td>
+      <td style="border-bottom:1px solid #e0e0e0"></td>
+      <td style="border-bottom:1px solid #e0e0e0"></td>
+      <td style="border-bottom:1px solid #e0e0e0"></td>
+    </tr>`).join('');
+
+  // Circuit board decorative lines (like the reference image background)
+  const circuitBg=`
+    <svg style="position:absolute;bottom:0;left:0;opacity:0.04;pointer-events:none" width="320" height="180" viewBox="0 0 320 180">
+      <path d="M10 140 L60 140 L60 110 L100 110" stroke="#000" stroke-width="1.5" fill="none"/>
+      <circle cx="100" cy="110" r="4" fill="none" stroke="#000" stroke-width="1.5"/>
+      <path d="M100 110 L140 110 L140 90 L180 90" stroke="#000" stroke-width="1.5" fill="none"/>
+      <circle cx="180" cy="90" r="4" fill="none" stroke="#000" stroke-width="1.5"/>
+      <path d="M30 160 L30 130 L80 130" stroke="#000" stroke-width="1.5" fill="none"/>
+      <circle cx="80" cy="130" r="3" fill="none" stroke="#000" stroke-width="1.5"/>
+      <path d="M80 130 L120 130 L120 100" stroke="#000" stroke-width="1.5" fill="none"/>
+      <circle cx="120" cy="100" r="3" fill="none" stroke="#000" stroke-width="1.5"/>
+      <path d="M50 170 L50 150 L90 150 L90 160" stroke="#000" stroke-width="1" fill="none"/>
+    </svg>`;
+
+  // Enhanced Modified Infiniti Q50 SVG — sporty, low-profile, custom
+  const carSVG=`<svg viewBox="0 0 380 140" xmlns="http://www.w3.org/2000/svg" style="width:260px;height:110px;display:block;margin:0 auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.25))">
+    <!-- Ground shadow -->
+    <ellipse cx="190" cy="132" rx="155" ry="7" fill="#ccc" opacity="0.55"/>
+    <!-- === BODY === -->
+    <!-- Lower sill / rocker panel -->
+    <path d="M38 92 Q40 106 66 110 L314 110 Q340 106 342 92 L336 76 L44 76 Z" fill="#141414"/>
+    <!-- Lower accent line (chrome-style) -->
+    <path d="M66 103 L314 103" stroke="#555" stroke-width="1.5" fill="none"/>
+    <!-- Front splitter (wide aggressive) -->
+    <path d="M330 92 Q350 90 356 82 L350 75 L336 76" fill="#0d0d0d"/>
+    <path d="M336 80 L355 78" stroke="#c0392b" stroke-width="1.2" fill="none" opacity="0.8"/>
+    <!-- Rear diffuser -->
+    <path d="M44 92 Q24 90 20 82 L26 75 L44 76" fill="#0d0d0d"/>
+    <rect x="22" y="83" width="18" height="4" rx="1" fill="#222"/>
+    <rect x="26" y="83" width="3" height="4" fill="#333"/>
+    <rect x="31" y="83" width="3" height="4" fill="#333"/>
+    <rect x="36" y="83" width="3" height="4" fill="#333"/>
+    <!-- Main body upper (coupe roofline) -->
+    <path d="M90 76 Q100 44 122 28 L258 28 Q280 44 290 76 Z" fill="#0f0f0f"/>
+    <!-- Roof — slightly curved, coupe -->
+    <path d="M116 76 Q120 50 132 34 L248 34 Q260 50 264 76 Z" fill="#161616"/>
+    <!-- === GLASS === -->
+    <!-- Rear windshield -->
+    <path d="M116 74 Q118 54 126 38 L200 38 Q205 54 202 74 Z" fill="#1a4a70" opacity="0.85"/>
+    <!-- Front windshield (more raked) -->
+    <path d="M202 74 Q206 52 220 36 L248 36 Q262 50 264 74 Z" fill="#1a5f9b" opacity="0.85"/>
+    <!-- Side glass -->
+    <path d="M128 74 Q132 56 138 42 L196 42 Q202 56 200 74 Z" fill="#2471a3" opacity="0.7"/>
+    <!-- Glass tint overlay -->
+    <path d="M202 74 Q205 55 218 40 L246 40 Q258 52 262 74 Z" fill="#1a3a5c" opacity="0.3"/>
+    <!-- Pillars -->
+    <line x1="128" y1="42" x2="118" y2="74" stroke="#111" stroke-width="4"/>
+    <line x1="264" y1="36" x2="272" y2="74" stroke="#111" stroke-width="4"/>
+    <line x1="200" y1="40" x2="204" y2="74" stroke="#1a1a1a" stroke-width="3"/>
+    <!-- === INFINITI Q50 DETAILS === -->
+    <!-- Hood crease lines -->
+    <path d="M264 74 Q296 68 335 78" stroke="#2a2a2a" stroke-width="2" fill="none"/>
+    <path d="M270 70 Q300 64 332 72" stroke="#3a3a3a" stroke-width="1" fill="none"/>
+    <path d="M116 74 Q84 68 45 78" stroke="#2a2a2a" stroke-width="2" fill="none"/>
+    <!-- Infiniti ∞ emblem on hood (glowing red) -->
+    <text x="300" y="72" font-size="11" font-weight="bold" fill="#c0392b" text-anchor="middle" font-family="Arial" opacity="0.9">∞</text>
+    <!-- === FRONT (RIGHT in RTL) — Infiniti Q50 face === -->
+    <!-- Headlight unit (swept LED style) -->
+    <path d="M320 69 Q344 67 356 75 L353 82 Q340 80 320 78 Z" fill="#f5f5e0" stroke="#ccc" stroke-width="0.5"/>
+    <!-- DRL strip -->
+    <path d="M322 70 Q344 68 354 73" stroke="#ffe040" stroke-width="2" fill="none" opacity="0.9" stroke-linecap="round"/>
+    <!-- Headlight inner accent -->
+    <path d="M326 74 Q338 73 348 77" stroke="#aaa" stroke-width="1" fill="none" opacity="0.6"/>
+    <!-- V-Motion grille (Infiniti signature) -->
+    <path d="M332 82 Q344 80 356 84 L354 90 Q340 92 332 90 Z" fill="#060606"/>
+    <!-- Grille V lines -->
+    <path d="M342 82 L338 90" stroke="#222" stroke-width="1.2" fill="none"/>
+    <path d="M347 81 L345 90" stroke="#222" stroke-width="1.2" fill="none"/>
+    <path d="M352 82 L351 90" stroke="#222" stroke-width="1.2" fill="none"/>
+    <!-- Lower grille mesh -->
+    <path d="M328 90 L358 90 L358 94 L328 94 Z" fill="#080808" stroke="#222" stroke-width="0.5"/>
+    <!-- Front fog light -->
+    <ellipse cx="338" cy="96" rx="7" ry="4" fill="#1a1a1a"/>
+    <ellipse cx="338" cy="96" rx="5" ry="3" fill="#fffde0" opacity="0.4"/>
+    <!-- === REAR (LEFT in RTL) — Infiniti Q50 rear === -->
+    <!-- Tail light (signature crescent) -->
+    <path d="M56 69 Q32 67 20 75 L23 82 Q36 80 56 78 Z" fill="#8b0000" stroke="#600" stroke-width="0.5" opacity="0.95"/>
+    <!-- Tail light inner glow -->
+    <path d="M54 70 Q34 68 22 74" stroke="#ff2020" stroke-width="1.5" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path d="M50 74 Q35 73 24 77" stroke="#dd1010" stroke-width="1" fill="none" opacity="0.5"/>
+    <!-- Trunk lip spoiler -->
+    <path d="M116 76 L110 73 L102 73 L100 76" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="0.5"/>
+    <!-- Rear Infiniti badge -->
+    <text x="82" y="72" font-size="10" font-weight="bold" fill="rgba(220,220,220,0.7)" text-anchor="middle" font-family="Arial">∞</text>
+    <!-- Exhaust tips (dual) -->
+    <ellipse cx="62" cy="108" rx="5" ry="3" fill="#1a1a1a" stroke="#444" stroke-width="0.8"/>
+    <ellipse cx="52" cy="108" rx="4.5" ry="2.5" fill="#1a1a1a" stroke="#444" stroke-width="0.8"/>
+    <!-- === WHEELS (modified spec — 5-spoke) === -->
+    <!-- Rear wheel arch -->
+    <path d="M64 103 Q62 78 84 74 Q108 70 110 90 Q110 103 100 107 L68 107 Z" fill="#111"/>
+    <!-- Front wheel arch -->
+    <path d="M290 103 Q288 78 308 74 Q332 70 334 90 Q334 103 324 107 L292 107 Z" fill="#111"/>
+    <!-- Rear wheel -->
+    <circle cx="86" cy="107" r="17" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="1.2"/>
+    <circle cx="86" cy="107" r="13" fill="#151515"/>
+    <!-- 5 spokes rear -->
+    <g stroke="#4a4a4a" stroke-width="2.2" stroke-linecap="round">
+      <line x1="86" y1="94" x2="86" y2="100"/>
+      <line x1="98.3" y1="100.7" x2="94" y2="104"/>
+      <line x1="93.9" y1="118.3" x2="90.5" y2="114"/>
+      <line x1="78.1" y1="118.3" x2="81.5" y2="114"/>
+      <line x1="73.7" y1="100.7" x2="78" y2="104"/>
+    </g>
+    <circle cx="86" cy="107" r="5.5" fill="#222"/>
+    <circle cx="86" cy="107" r="2.5" fill="#c0392b"/>
+    <!-- Front wheel -->
+    <circle cx="312" cy="107" r="17" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="1.2"/>
+    <circle cx="312" cy="107" r="13" fill="#151515"/>
+    <!-- 5 spokes front -->
+    <g stroke="#4a4a4a" stroke-width="2.2" stroke-linecap="round">
+      <line x1="312" y1="94" x2="312" y2="100"/>
+      <line x1="324.3" y1="100.7" x2="320" y2="104"/>
+      <line x1="319.9" y1="118.3" x2="316.5" y2="114"/>
+      <line x1="304.1" y1="118.3" x2="307.5" y2="114"/>
+      <line x1="299.7" y1="100.7" x2="304" y2="104"/>
+    </g>
+    <circle cx="312" cy="107" r="5.5" fill="#222"/>
+    <circle cx="312" cy="107" r="2.5" fill="#c0392b"/>
+    <!-- Brake caliper hint -->
+    <path d="M80 92 Q76 96 76 107 Q76 112 80 114" stroke="#c0392b" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M306 92 Q302 96 302 107 Q302 112 306 114" stroke="#c0392b" stroke-width="2" fill="none" opacity="0.7"/>
+    <!-- Side vent / door crease -->
+    <path d="M145 76 Q148 72 158 72 L165 72" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+    <path d="M220 72 L228 72 Q238 72 241 76" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+    <!-- Body line character crease -->
+    <path d="M44 82 Q120 78 190 79 Q260 80 336 82" stroke="#2c2c2c" stroke-width="1.5" fill="none"/>
+    <!-- Door handle -->
+    <path d="M162 70 L174 70" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+    <path d="M208 70 L220 70" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+    <!-- Q50 badge text -->
+    <text x="190" y="100" font-size="9" font-weight="bold" fill="rgba(192,57,43,0.6)" text-anchor="middle" font-family="Rajdhani,Arial" letter-spacing="1">Q50</text>
+  </svg>`;
+
+  return`<div style="font-family:'Cairo',sans-serif;background:white;color:#111;max-width:820px;margin:0 auto;padding:0;direction:rtl;position:relative;overflow:hidden">
+
+  <!-- ===== HEADER ===== -->
+  <div style="display:grid;grid-template-columns:1fr 250px 1fr;align-items:center;padding:14px 20px 10px;border-bottom:3px solid #1a1a1a;background:white;gap:6px;position:relative">
+    ${circuitBg}
+
+    <!-- RIGHT (RTL): Brand name مركز تورك -->
+    <div style="text-align:right;position:relative;z-index:1">
+      <div style="font-size:28px;font-weight:900;color:#1a1a1a;line-height:1;font-family:'Cairo',sans-serif;letter-spacing:-0.5px">مركـز تـورك</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#c0392b;letter-spacing:2.5px;line-height:1.1">TORK CENTER</div>
+      <div style="font-size:11px;color:#555;margin-top:3px">Performance &amp; Care &nbsp;&nbsp; للأداء والعناية بالسيارات</div>
+      ${data.phone?`<div style="font-size:10px;color:#777;margin-top:1px">📞 ${data.phone}</div>`:''}
+      ${data.address?`<div style="font-size:10px;color:#777">${data.address}</div>`:''}
+    </div>
+
+    <!-- CENTER: Car illustration -->
+    <div style="text-align:center;position:relative;z-index:1">${carSVG}</div>
+
+    <!-- LEFT (RTL): MAINTENANCE text -->
+    <div style="text-align:left;position:relative;z-index:1">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.25;letter-spacing:0.5px;text-transform:uppercase">MAINTENANCE OF<br>ALL TYPES OF CARS</div>
+      <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-top:4px">صيانة كافة أنواع السيارات</div>
+    </div>
+  </div>
+
+  <!-- ===== RECEIPT META BAR ===== -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:9px 20px;border-bottom:2px solid #1a1a1a;background:white;gap:10px">
+    <!-- RIGHT (RTL): Date & Plate -->
+    <div style="font-size:12px;line-height:2.1;text-align:right">
+      <span style="color:#555">التاريخ / Date: </span><strong>&nbsp;${inv.date||'_____________'}</strong><br>
+      <span style="color:#555">رقم اللوحة / Plate No: </span><strong>&nbsp;${inv.plate||'_____________'}</strong>
+      ${inv.mileage?`<br><span style="color:#555">العداد: </span><strong>${fmtNum(inv.mileage)} KM</strong>`:''}
+    </div>
+    <!-- CENTER: Receipt Title -->
+    <div style="text-align:center;padding:0 18px">
+      <div style="font-size:18px;font-weight:900;color:#1a1a1a;white-space:nowrap;letter-spacing:0.3px">فاتورة صيانة مبيعات / RECEIPT</div>
+      ${inv.serviceType?`<div style="font-size:11px;color:#555;margin-top:2px">${inv.serviceType}</div>`:''}
+    </div>
+    <!-- LEFT (RTL): Customer info -->
+    <div style="font-size:12px;line-height:2.1;text-align:left">
+      <span style="color:#555">Receipt No / رقم الوصل: </span><strong>&nbsp;#${inv.invNum||'—'}</strong><br>
+      <span style="color:#555">Name / اسم العميل: </span><strong>&nbsp;${inv.customerName||'_______________'}</strong><br>
+      <span style="color:#555">Vehicle / السيارة: </span><strong>&nbsp;${inv.carModel||'_______________'}</strong>
+    </div>
+  </div>
+
+  <!-- ===== ITEMS TABLE ===== -->
+  <table style="width:100%;border-collapse:collapse;margin:0">
+    <thead>
+      <tr style="background:#1c1c1c;color:white">
+        <th style="padding:10px 16px;text-align:right;font-size:13px;font-weight:700;letter-spacing:0.3px">Item Description &nbsp;&nbsp; الوصف</th>
+        <th style="padding:10px 12px;text-align:center;font-size:13px;font-weight:700;width:75px">Qty</th>
+        <th style="padding:10px 12px;text-align:center;font-size:13px;font-weight:700;width:140px">Price (${cur})</th>
+        <th style="padding:10px 12px;text-align:center;font-size:13px;font-weight:700;width:140px">الإجمالي / Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRows}
+      ${emptyRows}
+    </tbody>
+  </table>
+
+  <!-- ===== TOTALS ===== -->
+  <div style="display:flex;justify-content:flex-end;padding:10px 20px 8px;border-top:2px solid #1c1c1c">
+    <table style="border-collapse:collapse;min-width:320px">
+      ${inv.discount>0?`<tr>
+        <td style="padding:6px 16px;font-size:13px;text-align:right;border:1px solid #ddd;background:#fafafa">الخصم / Discount (${inv.discount}%)</td>
+        <td style="padding:6px 16px;font-size:13px;text-align:left;border:1px solid #ddd;background:#fafafa;color:#c0392b">- ${fmtNum(da)} ${cur}</td>
+      </tr>`:''}
+      <tr>
+        <td style="padding:7px 16px;font-size:13px;font-weight:600;text-align:right;border:1px solid #ddd;background:#f5f5f5">المجموع الفرعي / Subtotal</td>
+        <td style="padding:7px 16px;font-size:13px;font-weight:700;text-align:left;border:1px solid #ddd;background:#f5f5f5">${fmtNum(afterDisc)}</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 16px;font-size:13px;font-weight:600;text-align:right;border:1px solid #ddd;background:#f5f5f5">الضريبة : (${inv.tax||0}%) VAT</td>
+        <td style="padding:7px 16px;font-size:13px;font-weight:700;text-align:left;border:1px solid #ddd;background:#f5f5f5">${fmtNum(ta)}</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 16px;font-size:14px;font-weight:900;text-align:right;background:#1c1c1c;color:white">الإجمالي / Total</td>
+        <td style="padding:9px 16px;font-size:14px;font-weight:900;text-align:left;background:#1c1c1c;color:white">${cur} &nbsp; ${fmtNum(grand)}</td>
+      </tr>
+      ${(inv.paidAmount||0)>0?`<tr>
+        <td style="padding:6px 16px;font-size:12px;text-align:right;border:1px solid #ddd">المدفوع / Paid</td>
+        <td style="padding:6px 16px;font-size:12px;text-align:left;color:#27ae60;font-weight:700;border:1px solid #ddd">${fmtNum(inv.paidAmount)} ${cur}</td>
+      </tr>`:''}
+      ${(inv.remaining||0)>0?`<tr>
+        <td style="padding:6px 16px;font-size:12px;font-weight:700;text-align:right;border:1px solid #ddd;color:#c0392b">المتبقي / Balance</td>
+        <td style="padding:6px 16px;font-size:12px;font-weight:700;text-align:left;color:#c0392b;border:1px solid #ddd">${fmtNum(inv.remaining)} ${cur}</td>
+      </tr>`:''}
+    </table>
+  </div>
+
+  <!-- ===== INSTALLMENTS ===== -->
+  ${inv.installments?`<div style="padding:10px 20px;border-top:1px solid #eee">
+    <div style="font-weight:700;margin-bottom:7px;font-size:12px;color:#333">📅 جدول الأقساط</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#1c1c1c;color:white">
+        <th style="padding:6px 12px;text-align:right">#</th>
+        <th style="padding:6px 12px;text-align:right">تاريخ الاستحقاق</th>
+        <th style="padding:6px 12px;text-align:right">المبلغ</th>
+        <th style="padding:6px 12px;text-align:right">الحالة</th>
+      </tr></thead>
+      <tbody>${inv.installments.map((inst,i)=>`<tr>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee">${i+1}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee">${inst.dueDate}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee;font-weight:700">${fmtNum(inst.amount)} ${cur}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee">${inst.paid?'✅ مدفوع':'⏳ معلق'}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`:''}
+
+  <!-- ===== NOTES ===== -->
+  ${inv.notes?`<div style="padding:8px 20px;font-size:12px;color:#666;border-top:1px dashed #ddd;font-style:italic">📝 ${inv.notes}</div>`:''}
+
+  <!-- ===== FOOTER ===== -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-top:3px solid #1c1c1c;margin-top:4px;background:white">
+    <!-- LEFT: Thank You -->
+    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#1a1a1a;font-style:italic;letter-spacing:0.5px">Thank You</div>
+    <!-- RIGHT: Arabic thanks + car icon -->
+    <div style="text-align:left;font-size:12px;color:#555;display:flex;align-items:center;gap:8px">
+      <div>
+        <div style="font-weight:700;color:#1a1a1a;font-size:13px">شكراً لزيارتكم Tork Center</div>
+        <div>Thank you for visiting Tork Center</div>
+      </div>
+      <svg viewBox="0 0 50 28" style="width:44px;height:24px;opacity:0.7">
+        <path d="M4 18 Q5 22 10 23 L40 23 Q45 22 46 18 L45 13 L5 13 Z" fill="#222"/>
+        <path d="M14 13 Q16 6 20 4 L30 4 Q34 6 36 13 Z" fill="#111"/>
+        <path d="M19 13 Q20 7 22 5 L28 5 Q30 7 31 13 Z" fill="#2980b9" opacity="0.8"/>
+        <circle cx="13" cy="22" r="5" fill="#111"/><circle cx="13" cy="22" r="3" fill="#333"/>
+        <circle cx="37" cy="22" r="5" fill="#111"/><circle cx="37" cy="22" r="3" fill="#333"/>
+      </svg>
+    </div>
+  </div>
+
+</div>`;}
+
+function payDebt(invId){const inv=data.invoices.find(x=>x.id===invId);if(!inv)return;const amount=prompt(`المبلغ المدفوع (المتبقي: ${fmtNum(inv.remaining)} ${data.currency}):`);if(!amount)return;const amt=+amount;if(isNaN(amt)||amt<=0){toast('مبلغ غير صالح','error');return;}inv.paidAmount=(inv.paidAmount||0)+Math.min(amt,inv.remaining);inv.remaining=Math.max(0,inv.grandTotal-inv.paidAmount);inv.fullyPaid=inv.remaining===0;data.treasury.push({id:uid(),type:'income',amount:Math.min(amt,inv.remaining+(+amount)),desc:`تسديد دين #${inv.invNum} — ${inv.customerName||''}`,date:new Date().toISOString().slice(0,10),ref:'INV-'+inv.invNum,createdAt:new Date().toISOString()});DB.save('invoices',data.invoices);DB.save('treasury',data.treasury);renderInvoices(data.invoices);updateBadges();toast('تم تسجيل الدفعة','success');}
+
+function renderInstallments(instInvs){const el=document.getElementById('installmentsTableBody');if(!instInvs.length){el.innerHTML='<div class="empty-state"><div class="ei">📅</div><p>لا توجد ملفات أقساط</p></div>';return;}const today=new Date().toISOString().slice(0,10);el.innerHTML=`<table><thead><tr><th>#</th><th>الزبون</th><th>الموديل</th><th>الإجمالي</th><th>المقدم</th><th>الأقساط</th><th>المتبقي</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${instInvs.slice().reverse().map(inv=>{const pi=inv.installments.filter(i=>i.paid).length;const ho=inv.installments.some(i=>!i.paid&&i.dueDate<today);const s=inv.fullyPaid?'badge-green':ho?'badge-red':'badge-gold';const st=inv.fullyPaid?'✅ مكتمل':ho?'🔴 متأخر':'🟡 نشط';return`<tr><td style="color:var(--red2);font-weight:700">#${inv.invNum}</td><td>${inv.customerName||'—'}</td><td>${inv.carModel?`<span class="badge badge-red">${inv.carModel}</span>`:'—'}</td><td>${fmtNum(inv.grandTotal)}</td><td style="color:var(--green)">${fmtNum(inv.paidAmount||0)}</td><td>${pi}/${inv.installments.length}</td><td style="color:var(--red2)">${fmtNum(inv.remaining||0)}</td><td><span class="badge ${s}">${st}</span></td><td><div class="row-actions"><button class="action-btn pay" onclick="openPayInst('${inv.id}')">💳</button><button class="action-btn print" onclick="printInvoice('${inv.id}')">🖨️</button></div></td></tr>`;}).join('')}</tbody></table>`;const ow=document.getElementById('instAlertsWrap');const od=instInvs.filter(i=>!i.fullyPaid&&i.installments.some(x=>!x.paid&&x.dueDate<today));ow.innerHTML=od.length>0?`<div class="alert-banner danger">🔴 ${od.length} ملف أقساط متأخر يحتاج متابعة</div>`:'';}
+function filterInst(f,el){document.querySelectorAll('#page-installments .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');const today=new Date().toISOString().slice(0,10);const all=data.invoices.filter(i=>i.type==='installment');let fil=all;if(f==='active')fil=all.filter(i=>!i.fullyPaid&&!i.installments.some(x=>!x.paid&&x.dueDate<today));if(f==='completed')fil=all.filter(i=>i.fullyPaid);if(f==='overdue')fil=all.filter(i=>!i.fullyPaid&&i.installments.some(x=>!x.paid&&x.dueDate<today));renderInstallments(fil);}
+function openPayInst(invId){const inv=data.invoices.find(x=>x.id===invId);if(!inv||!inv.installments)return;const today=new Date().toISOString().slice(0,10);const cust=data.customers.find(c=>c.id===inv.customerId);document.getElementById('payInstInfo').innerHTML=`<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:11px;font-size:12px"><div class="info-row"><span class="info-label">الزبون</span><span class="info-val">${cust?.name||'—'}</span></div><div class="info-row"><span class="info-label">السيارة</span><span class="info-val">${inv.carModel||'—'} ${inv.plate?'— '+inv.plate:''}</span></div><div class="info-row"><span class="info-label">المتبقي</span><span class="info-val" style="color:var(--red2)">${fmtNum(inv.remaining||0)} ${data.currency}</span></div></div>`;document.getElementById('instScheduleList').innerHTML=inv.installments.map((inst,i)=>{const od=!inst.paid&&inst.dueDate<today;const it=!inst.paid&&inst.dueDate===today;return`<div class="inst-row ${inst.paid?'paid':od?'overdue':it?'today':''}"><span style="font-weight:700">القسط ${i+1}</span><span style="color:var(--text3)">${inst.dueDate}</span><span style="font-weight:700">${fmtNum(inst.amount)} ${data.currency}</span>${inst.paid?`<span style="color:var(--green);font-size:10px">✅ ${inst.paidDate||''}</span>`:`<button onclick="payInstallment('${invId}',${i})" style="background:var(--green-dim);border:1px solid var(--green);color:var(--green);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:10px;font-family:'Cairo',sans-serif;font-weight:700">دفع</button>`}</div>`;}).join('');openModal('payInstModal');}
+function payInstallment(invId,instIdx){const inv=data.invoices.find(x=>x.id===invId);if(!inv)return;const inst=inv.installments[instIdx];if(inst.paid)return;inst.paid=true;inst.paidDate=new Date().toISOString().slice(0,10);inv.paidAmount=(inv.paidAmount||0)+inst.amount;inv.remaining=Math.max(0,inv.grandTotal-inv.paidAmount);inv.fullyPaid=inv.installments.every(i=>i.paid);data.treasury.push({id:uid(),type:'income',amount:inst.amount,desc:`قسط #${instIdx+1} فاتورة #${inv.invNum} — ${inv.customerName||''}`,date:inst.paidDate,ref:'INST-'+inv.invNum,createdAt:new Date().toISOString()});DB.save('invoices',data.invoices);DB.save('treasury',data.treasury);openPayInst(invId);updateBadges();toast('تم دفع القسط ✅','success');}
+
+function createReturn(invId){const orig=data.invoices.find(x=>x.id===invId);if(!orig)return;closeModal('viewInvModal');confirm2(`إنشاء مرتجع لفاتورة #${orig.invNum}؟`,()=>{orig.items.forEach(item=>{if(item.productId){const p=data.parts.find(x=>x.id===item.productId);if(p)p.qty+=item.qty;}});DB.save('parts',data.parts);const ret={...JSON.parse(JSON.stringify(orig)),id:uid(),invNum:data.invoices.length+1,isReturn:true,type:'cash',originalInvId:invId,createdAt:new Date().toISOString()};data.invoices.push(ret);data.treasury.push({id:uid(),type:'expense',amount:orig.grandTotal,desc:`مرتجع فاتورة #${orig.invNum}`,date:new Date().toISOString().slice(0,10),ref:'RET-'+orig.invNum,createdAt:new Date().toISOString()});DB.save('invoices',data.invoices);DB.save('treasury',data.treasury);renderInvoices(data.invoices);logActivity(`مرتجع فاتورة #${orig.invNum}`);toast('تم إنشاء المرتجع','success');});}
+function renderReturns(){const el=document.getElementById('returnsBody');const rets=data.invoices.filter(i=>i.isReturn);if(!rets.length){el.innerHTML='<div class="empty-state"><div class="ei">↩️</div><p>لا توجد مرتجعات</p></div>';return;}el.innerHTML=`<table><thead><tr><th>#</th><th>التاريخ</th><th>الزبون</th><th>الموديل</th><th>المبلغ</th><th>إجراءات</th></tr></thead><tbody>${rets.slice().reverse().map(r=>`<tr><td style="color:var(--red2);font-weight:700">#${r.invNum}</td><td>${r.date}</td><td>${r.customerName||'—'}</td><td>${r.carModel||'—'}</td><td style="color:var(--red2);font-weight:700">${fmtNum(r.grandTotal)} ${data.currency}</td><td><div class="row-actions"><button class="action-btn print" onclick="printInvoice('${r.id}')">🖨️</button></div></td></tr>`).join('')}</tbody></table>`;}
+
+// ============================================================
+//  CUSTOMERS
+// ============================================================
+function renderCustomers(){
+  const el=document.getElementById('customersBody');
+  if(!data.customers.length){el.innerHTML='<div class="empty-state"><div class="ei">👥</div><p>لا يوجد زبائن</p></div>';return;}
+  el.innerHTML=`<table><thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>السيارة</th><th>رقم اللوحة</th><th>الفواتير</th><th>إجمالي المشتريات</th><th>إجراءات</th></tr></thead><tbody>${
+    data.customers.map((c,i)=>{const invs=data.invoices.filter(x=>x.customerId===c.id&&!x.isReturn);const tot=invs.reduce((s,x)=>s+x.grandTotal,0);const model=data.carModels.find(m=>m.id===c.carModel||m.name===c.carModel);
+    return`<tr><td style="color:var(--text3)">${i+1}</td><td style="font-weight:700">${c.name}</td><td>${c.phone||'—'}</td>
+    <td>${model?`<span class="badge badge-red">${model.emoji} ${model.name}</span>`:c.carModel?`<span class="badge badge-red">${c.carModel}</span>`:'—'}</td>
+    <td style="font-weight:600">${c.plate||'—'}</td>
+    <td><span class="badge badge-blue">${invs.length}</span></td>
+    <td style="color:var(--red2);font-weight:700">${fmtNum(tot)} ${data.currency}</td>
+    <td><div class="row-actions"><button class="action-btn edit" onclick="editCustomer('${c.id}')">✏️</button><button class="action-btn del" onclick="deleteCustomer('${c.id}')">🗑️</button></div></td></tr>`;}).join('')}
+  </tbody></table>`;
+}
+function openCustomerModal(id=null){
+  state.editingId=id;document.getElementById('custModalTitle').textContent=id?'تعديل زبون':'إضافة زبون';
+  const msel=document.getElementById('custCarModel');msel.innerHTML='<option value="">اختر الموديل</option>'+data.carModels.map(m=>`<option value="${m.id}">${m.emoji} ${m.name} (${m.brand})</option>`).join('');
+  if(id){const c=data.customers.find(x=>x.id===id);document.getElementById('custName').value=c?.name||'';document.getElementById('custPhone').value=c?.phone||'';document.getElementById('custCarModel').value=c?.carModel||'';document.getElementById('custPlate').value=c?.plate||'';document.getElementById('custYear').value=c?.year||'';document.getElementById('custColor').value=c?.color||'';document.getElementById('custNotes').value=c?.notes||'';}
+  else{['custName','custPhone','custPlate','custYear','custColor','custNotes'].forEach(i=>document.getElementById(i).value='');document.getElementById('custCarModel').value='';}
+  openModal('customerModal');
+}
+function saveCustomer(){const name=document.getElementById('custName').value.trim();if(!name){toast('أدخل اسم الزبون','error');return;}const c={id:state.editingId||uid(),name,phone:document.getElementById('custPhone').value.trim(),carModel:document.getElementById('custCarModel').value,plate:document.getElementById('custPlate').value.trim(),year:document.getElementById('custYear').value,color:document.getElementById('custColor').value.trim(),notes:document.getElementById('custNotes').value.trim(),createdAt:new Date().toISOString()};if(state.editingId){const idx=data.customers.findIndex(x=>x.id===state.editingId);data.customers[idx]=c;}else data.customers.push(c);DB.save('customers',data.customers);closeModal('customerModal');renderCustomers();toast('تم','success');}
+function editCustomer(id){openCustomerModal(id);}
+function deleteCustomer(id){confirm2('حذف هذا الزبون؟',()=>{data.customers=data.customers.filter(x=>x.id!==id);DB.save('customers',data.customers);renderCustomers();toast('تم','info');});}
+
+// ============================================================
+//  TREASURY
+// ============================================================
+function renderTreasury(entries){const inc=entries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);const exp=entries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);const bal=inc-exp;document.getElementById('trsummary').innerHTML=`<div class="trs-card"><div class="trs-label">إجمالي الدخل</div><div class="trs-value" style="color:var(--green)">${fmtNum(inc)}</div></div><div class="trs-card"><div class="trs-label">إجمالي الصرف</div><div class="trs-value" style="color:var(--red2)">${fmtNum(exp)}</div></div><div class="trs-card" style="border-color:${bal>=0?'var(--green)':'var(--red2)'}"><div class="trs-label">الرصيد الحالي</div><div class="trs-value" style="color:${bal>=0?'var(--gold)':'var(--red2)'}">${fmtNum(bal)}</div></div>`;renderTreasuryTable(entries);}
+function renderTreasuryTable(entries){const el=document.getElementById('treasuryBody');if(!entries.length){el.innerHTML='<div class="empty-state"><div class="ei">💰</div><p>لا توجد حركات</p></div>';return;}el.innerHTML=`<table><thead><tr><th>#</th><th>التاريخ</th><th>النوع</th><th>البيان</th><th>المرجع</th><th>المبلغ</th><th>حذف</th></tr></thead><tbody>${entries.slice().reverse().map((e,i)=>`<tr><td style="color:var(--text3)">${entries.length-i}</td><td style="font-size:11px">${e.date||''}</td><td><span class="badge ${e.type==='income'?'badge-green':'badge-red'}">${e.type==='income'?'📥 دخل':'📤 صرف'}</span></td><td>${e.desc||''}</td><td style="color:var(--text3);font-size:10px">${e.ref||''}</td><td style="font-weight:700;color:${e.type==='income'?'var(--green)':'var(--red2)'}">${e.type==='income'?'+':'-'}${fmtNum(e.amount)} ${data.currency}</td><td><button class="action-btn del" onclick="deleteTrsEntry('${e.id}')">🗑️</button></td></tr>`).join('')}</tbody></table>`;}
+function filterTreasury(type,el){document.querySelectorAll('#page-treasury .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTreasuryTable(type==='all'?data.treasury:data.treasury.filter(e=>e.type===type));}
+function filterTreasuryDate(date){if(!date){renderTreasuryTable(data.treasury);return;}renderTreasuryTable(data.treasury.filter(e=>e.date===date));}
+function openTreasuryModal(type='income'){document.getElementById('trsType').value=type;['trsAmount','trsDesc','trsRef'].forEach(i=>document.getElementById(i).value='');document.getElementById('trsDate').value=new Date().toISOString().slice(0,10);document.getElementById('trsModalTitle').textContent=type==='income'?'📥 دخل':'📤 صرف';openModal('treasuryModal');}
+function saveTreasuryEntry(){const amount=+document.getElementById('trsAmount').value;const desc=document.getElementById('trsDesc').value.trim();if(!amount||!desc){toast('أدخل المبلغ والبيان','error');return;}const entry={id:uid(),type:document.getElementById('trsType').value,amount,desc,date:document.getElementById('trsDate').value,ref:document.getElementById('trsRef').value,createdAt:new Date().toISOString()};data.treasury.push(entry);DB.save('treasury',data.treasury);closeModal('treasuryModal');renderTreasury(data.treasury);logActivity(`${entry.type==='income'?'دخل':'صرف'}: ${desc} — ${fmtNum(amount)}`);toast('تم','success');}
+function deleteTrsEntry(id){confirm2('حذف هذه الحركة؟',()=>{data.treasury=data.treasury.filter(x=>x.id!==id);DB.save('treasury',data.treasury);renderTreasury(data.treasury);toast('تم','info');});}
+
+// ============================================================
+//  REPORTS
+// ============================================================
+function renderReportsPage(){document.getElementById('reportContent').innerHTML='';}
+function showReport(type){
+  const el=document.getElementById('reportContent');
+  const today=new Date().toISOString().slice(0,10);const thisMonth=today.slice(0,7);
+  const invs=data.invoices.filter(i=>!i.isReturn);
+  if(type==='sales'){const td=invs.filter(i=>i.date===today).reduce((s,i)=>s+i.grandTotal,0);const mo=invs.filter(i=>(i.date||'').startsWith(thisMonth)).reduce((s,i)=>s+i.grandTotal,0);const tot=invs.reduce((s,i)=>s+i.grandTotal,0);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">📊 تقرير المبيعات</div><button class="topbar-btn" onclick="window.print()">🖨️ طباعة</button></div><div style="padding:18px"><div class="stats-grid" style="margin-bottom:16px"><div class="stat-card red"><div class="stat-label">مبيعات اليوم</div><div class="stat-value red">${fmtNum(td)}</div></div><div class="stat-card blue"><div class="stat-label">مبيعات الشهر</div><div class="stat-value blue">${fmtNum(mo)}</div></div><div class="stat-card green"><div class="stat-label">الإجمالي الكلي</div><div class="stat-value green">${fmtNum(tot)}</div></div><div class="stat-card silver"><div class="stat-label">عدد الفواتير</div><div class="stat-value silver">${invs.length}</div></div></div><table><thead><tr><th>#</th><th>التاريخ</th><th>الزبون</th><th>الموديل</th><th>النوع</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${invs.slice().reverse().slice(0,25).map(i=>`<tr><td>#${i.invNum}</td><td>${i.date}</td><td>${i.customerName||'—'}</td><td>${i.carModel||'—'}</td><td><span class="badge ${invTypeBadge(i.type)}">${invTypeLabel(i.type)}</span></td><td style="font-weight:700">${fmtNum(i.grandTotal)} ${data.currency}</td><td><span class="badge ${i.fullyPaid||i.type==='cash'||i.type==='service'?'badge-green':'badge-red'}">${i.fullyPaid||i.type==='cash'||i.type==='service'?'✅':'⏳'}</span></td></tr>`).join('')}</tbody></table></div></div>`;}
+  else if(type==='inventory'){const tv=data.parts.reduce((s,p)=>s+(p.qty*p.buyPrice),0);const sv=data.parts.reduce((s,p)=>s+(p.qty*p.sellPrice),0);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">🔩 تقرير المخزون</div></div><div style="padding:18px"><div class="stats-grid" style="margin-bottom:16px"><div class="stat-card red"><div class="stat-label">قيمة المخزون (شراء)</div><div class="stat-value red">${fmtNum(tv)}</div></div><div class="stat-card green"><div class="stat-label">قيمة المخزون (بيع)</div><div class="stat-value green">${fmtNum(sv)}</div></div><div class="stat-card blue"><div class="stat-label">عدد الأصناف</div><div class="stat-value blue">${data.parts.length}</div></div><div class="stat-card orange"><div class="stat-label">قطع منخفضة</div><div class="stat-value orange">${data.parts.filter(p=>p.qty<=(p.minQty||3)).length}</div></div></div><table><thead><tr><th>القطعة</th><th>الموديل</th><th>الكمية</th><th>سعر الشراء</th><th>سعر البيع</th><th>قيمة المخزون</th><th>الحالة</th></tr></thead><tbody>${data.parts.map(p=>{const m=data.carModels.find(x=>x.id===p.carModel);const low=p.qty<=(p.minQty||3);return`<tr><td>${p.emoji||'🔩'} ${p.name}</td><td>${m?m.name:'عام'}</td><td style="font-weight:700">${p.qty} ${p.unit}</td><td>${fmtNum(p.buyPrice)}</td><td>${fmtNum(p.sellPrice)}</td><td style="font-weight:700;color:var(--red2)">${fmtNum(p.qty*p.buyPrice)}</td><td><span class="badge ${low?'badge-red':'badge-green'}">${low?'⚠️':'✅'}</span></td></tr>`;}).join('')}</tbody></table></div></div>`;}
+  else if(type==='treasury_report'){const inc=data.treasury.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);const exp=data.treasury.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">💰 تقرير الصندوق</div></div><div style="padding:18px"><div class="stats-grid" style="margin-bottom:16px"><div class="stat-card green"><div class="stat-label">إجمالي الدخل</div><div class="stat-value green">${fmtNum(inc)}</div></div><div class="stat-card red"><div class="stat-label">إجمالي الصرف</div><div class="stat-value red">${fmtNum(exp)}</div></div><div class="stat-card gold"><div class="stat-label">الرصيد الحالي</div><div class="stat-value gold">${fmtNum(inc-exp)}</div></div></div></div></div>`;}
+  else if(type==='debts'){const di=data.invoices.filter(i=>!i.fullyPaid&&!i.isReturn&&(i.type==='debt'||i.type==='installment'));const td=di.reduce((s,i)=>s+(i.remaining||0),0);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">📋 تقرير الديون</div></div><div style="padding:18px"><div class="stats-grid" style="margin-bottom:16px"><div class="stat-card red"><div class="stat-label">إجمالي الديون</div><div class="stat-value red">${fmtNum(td)}</div></div><div class="stat-card gold"><div class="stat-label">عدد الملفات</div><div class="stat-value gold">${di.length}</div></div></div><table><thead><tr><th>#</th><th>الزبون</th><th>الموديل</th><th>النوع</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody>${di.map(i=>`<tr><td>#${i.invNum}</td><td>${i.customerName||'—'}</td><td>${i.carModel||'—'}</td><td><span class="badge ${invTypeBadge(i.type)}">${invTypeLabel(i.type)}</span></td><td>${fmtNum(i.grandTotal)}</td><td style="color:var(--green)">${fmtNum(i.paidAmount||0)}</td><td style="color:var(--red2);font-weight:700">${fmtNum(i.remaining||0)}</td></tr>`).join('')}</tbody></table></div></div>`;}
+  else if(type==='profit'){let tp=0;invs.forEach(inv=>{inv.items.forEach(item=>{if(item.productId){const p=data.parts.find(x=>x.id===item.productId);if(p)tp+=(item.price-p.buyPrice)*item.qty*(1-item.disc/100);}else if(item.type==='service')tp+=item.total;});});const st=invs.reduce((s,i)=>s+i.grandTotal,0);const ct=invs.reduce((s,inv)=>{let c=0;inv.items.forEach(item=>{if(item.productId){const p=data.parts.find(x=>x.id===item.productId);if(p)c+=p.buyPrice*item.qty;}});return s+c;},0);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">💹 تقرير الأرباح</div></div><div style="padding:18px"><div class="stats-grid" style="margin-bottom:16px"><div class="stat-card green"><div class="stat-label">صافي الربح</div><div class="stat-value green">${fmtNum(tp)}</div></div><div class="stat-card red"><div class="stat-label">إجمالي الإيرادات</div><div class="stat-value red">${fmtNum(st)}</div></div><div class="stat-card orange"><div class="stat-label">إجمالي التكلفة</div><div class="stat-value orange">${fmtNum(ct)}</div></div><div class="stat-card blue"><div class="stat-label">هامش الربح</div><div class="stat-value blue">${st>0?Math.round((tp/st)*100):0}%</div></div></div></div></div>`;}
+  else if(type==='models'){const modelStats=data.carModels.map(m=>{const mi=invs.filter(i=>i.carModel===m.name||i.carModel===m.id);return{...m,count:mi.length,total:mi.reduce((s,i)=>s+i.grandTotal,0)};}).sort((a,b)=>b.total-a.total);el.innerHTML=`<div class="table-wrap"><div class="table-header"><div class="table-title">🚗 تقرير حسب الموديل</div></div><div style="padding:18px"><table><thead><tr><th>الموديل</th><th>الماركة</th><th>عدد الفواتير</th><th>إجمالي المبيعات</th></tr></thead><tbody>${modelStats.map(m=>`<tr><td><span style="font-size:16px">${m.emoji}</span> <strong>${m.name}</strong></td><td style="color:var(--text2)">${m.brand}</td><td><span class="badge badge-blue">${m.count}</span></td><td style="font-weight:700;color:var(--red2)">${fmtNum(m.total)} ${data.currency}</td></tr>`).join('')}</tbody></table></div></div>`;}
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+// ============================================================
+//  USERS
+// ============================================================
+function renderUsers(){const el=document.getElementById('usersList');const colors={manager:'var(--red)',cashier:'var(--blue)',stock:'var(--green)',technician:'var(--orange)',developer:'var(--purple)'};const all=state.currentUser?.role==='developer'?[DEV,...data.users]:data.users;el.innerHTML=all.map(u=>`<div class="user-row"><div class="user-row-avatar" style="background:${colors[u.role]||'var(--silver)'}22;color:${colors[u.role]||'var(--silver)'}">${u.fullName.charAt(0)}</div><div class="user-row-info"><div class="user-row-name">${u.fullName}</div><div class="user-row-meta">@${u.username}</div></div><span class="badge ${getRoleBadge(u.role)}">${getRoleLabel(u.role)}</span>${u.id!=='dev0'?`<div style="display:flex;gap:5px"><button class="action-btn edit" onclick="editUser('${u.id}')">✏️</button><button class="action-btn del" onclick="deleteUser('${u.id}')">🗑️</button></div>`:'<span style="font-size:10px;color:var(--text3)">حساب النظام</span>'}</div>`).join('');}
+function openUserModal(id=null){state.editingId=id;document.getElementById('userModalTitle').textContent=id?'تعديل مستخدم':'إضافة مستخدم';if(id){const u=data.users.find(x=>x.id===id);document.getElementById('uFullName').value=u?.fullName||'';document.getElementById('uUsername').value=u?.username||'';document.getElementById('uPassword').value=u?.password||'';document.getElementById('uRole').value=u?.role||'cashier';}else{['uFullName','uUsername','uPassword'].forEach(i=>document.getElementById(i).value='');document.getElementById('uRole').value='cashier';}openModal('userModal');}
+function saveUser(){const fn=document.getElementById('uFullName').value.trim();const un=document.getElementById('uUsername').value.trim();const pw=document.getElementById('uPassword').value;if(!fn||!un||!pw){toast('يرجى ملء جميع الحقول','error');return;}if(un==='readh'){toast('هذا الاسم محجوز','error');return;}if(data.users.find(u=>u.username===un&&u.id!==state.editingId)){toast('اسم المستخدم موجود','error');return;}const u={id:state.editingId||uid(),fullName:fn,username:un,password:pw,role:document.getElementById('uRole').value,createdAt:new Date().toISOString()};if(state.editingId){const idx=data.users.findIndex(x=>x.id===state.editingId);data.users[idx]=u;}else data.users.push(u);DB.save('users',data.users);closeModal('userModal');renderUsers();toast('تم','success');}
+function editUser(id){openUserModal(id);}
+function deleteUser(id){if(id===state.currentUser?.id){toast('لا يمكن حذف حسابك','error');return;}confirm2('حذف هذا المستخدم؟',()=>{data.users=data.users.filter(x=>x.id!==id);DB.save('users',data.users);renderUsers();toast('تم','info');});}
+
+// ============================================================
+//  SETTINGS
+// ============================================================
+function renderSettings(){
+  document.getElementById('settingAppName').value=data.appName;
+  document.getElementById('settingPhone').value=data.phone||'';
+  document.getElementById('settingAddress').value=data.address||'';
+  document.getElementById('settingCurrency').value=data.currency||'SAR';
+  document.getElementById('settingPrintType').value=data.printType||'a4';
+  document.getElementById('settingTax').value=data.taxRate||15;
+  if(data.firebaseConfig)document.getElementById('settingFirebaseConfig').value=JSON.stringify(data.firebaseConfig,null,2);
+  updateSyncUI(state.fbConnected);
+  renderSettingsModelsList();
+  const canChange=state.currentUser?.role==='manager'||state.currentUser?.role==='developer';
+  document.getElementById('changeCredWrap').style.opacity=canChange?'1':'0.5';
+  document.getElementById('changeCredWrap').style.pointerEvents=canChange?'auto':'none';
+}
+function saveAppSettings(){data.appName=document.getElementById('settingAppName').value.trim()||'Tork Center';data.phone=document.getElementById('settingPhone').value.trim();data.address=document.getElementById('settingAddress').value.trim();data.currency=document.getElementById('settingCurrency').value;['appName','phone','address','currency'].forEach(k=>DB.save(k,data[k]));toast('تم حفظ الإعدادات','success');}
+function savePrintSettings(){data.printType=document.getElementById('settingPrintType').value;data.taxRate=+document.getElementById('settingTax').value||15;DB.save('printType',data.printType);DB.save('taxRate',data.taxRate);toast('تم','success');}
+function changeCredentials(){const nu=document.getElementById('newUsername').value.trim();const cur=document.getElementById('currentPass').value;const nw=document.getElementById('newPass').value;const cf=document.getElementById('confirmPass').value;if(!cur||!nw){toast('أدخل كلمة المرور الحالية والجديدة','error');return;}if(nw!==cf){toast('كلمتا المرور غير متطابقتين','error');return;}if(nw.length<6){toast('6 أحرف على الأقل','error');return;}const user=state.currentUser;if(user.role==='developer'){toast('لا يمكن تغيير بيانات المطور','error');return;}const idx=data.users.findIndex(u=>u.id===user.id);if(data.users[idx].password!==cur){toast('كلمة المرور الحالية خاطئة','error');return;}if(nu&&nu!=='readh')data.users[idx].username=nu;data.users[idx].password=nw;DB.save('users',data.users);state.currentUser=data.users[idx];toast('تم تحديث بيانات الدخول','success');['newUsername','currentPass','newPass','confirmPass'].forEach(i=>document.getElementById(i).value='');}
+
+// ============================================================
+//  NOTIFICATIONS
+// ============================================================
+function toggleNotifPanel(){notifOpen=!notifOpen;document.getElementById('notifPanel').classList.toggle('open',notifOpen);document.getElementById('notifOverlay').classList.toggle('open',notifOpen);if(notifOpen)renderNotifList();}
+function addNotif(type,title,desc,icon){const n={id:uid(),type,title,desc,icon:icon||'🔔',date:new Date().toISOString(),read:false};notifications.unshift(n);if(notifications.length>50)notifications=notifications.slice(0,50);DB.save('notifications',notifications);updateNotifBadge();if(notifOpen)renderNotifList();}
+function markAllRead(){notifications.forEach(n=>n.read=true);DB.save('notifications',notifications);updateNotifBadge();renderNotifList();}
+function clearAllNotifs(){notifications=[];DB.save('notifications',notifications);updateNotifBadge();renderNotifList();}
+function updateNotifBadge(){const u=notifications.filter(n=>!n.read).length;const b=document.getElementById('notifCount');if(b){b.style.display=u>0?'flex':'none';b.textContent=u>9?'9+':u;}}
+function renderNotifList(){const el=document.getElementById('notifList');if(!notifications.length){el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text3)"><div style="font-size:36px;margin-bottom:10px;opacity:.4">🔔</div><div style="font-size:12px">لا توجد إشعارات</div></div>';return;}el.innerHTML=notifications.map(n=>`<div class="notif-item ${n.read?'':'unread'} ${n.type}" onclick="readNotif('${n.id}')"><div class="notif-icon">${n.icon}</div><div class="notif-title">${n.title}</div><div class="notif-desc">${n.desc}</div><div class="notif-meta"><span>Tork Center</span><span>${fmtDate(n.date)}</span></div></div>`).join('');}
+function readNotif(id){const n=notifications.find(x=>x.id===id);if(n){n.read=true;DB.save('notifications',notifications);updateNotifBadge();renderNotifList();}}
+function checkLocalAlerts(){
+  const today=new Date().toISOString().slice(0,10);
+  const low=data.parts.filter(p=>p.qty<=(p.minQty||3));
+  if(low.length>0){const key='lowstock_'+today;if(!notifications.find(n=>n.id===key)){const n={id:key,type:'danger',title:`⚠️ مخزون منخفض — ${low.length} قطعة`,desc:low.slice(0,3).map(p=>`${p.emoji||'🔩'} ${p.name}: ${p.qty} ${p.unit||'قطعة'}`).join(' | '),icon:'🔩',date:new Date().toISOString(),read:false};notifications.unshift(n);DB.save('notifications',notifications);}}
+  const overdue=data.invoices.filter(i=>i.type==='installment'&&!i.fullyPaid&&i.installments?.some(x=>!x.paid&&x.dueDate<today));
+  if(overdue.length>0){const key='overdue_'+today;if(!notifications.find(n=>n.id===key)){const n={id:key,type:'danger',title:`🔴 ${overdue.length} ملف أقساط متأخر`,desc:overdue.slice(0,3).map(o=>`#${o.invNum} — ${o.customerName||'زبون'} ${o.carModel?'('+o.carModel+')':''}`).join(' | '),icon:'📅',date:new Date().toISOString(),read:false};notifications.unshift(n);DB.save('notifications',notifications);}}
+  const dueToday=getTodayDueInst();
+  if(dueToday.length>0){const key='duetoday_'+today;if(!notifications.find(n=>n.id===key)){const n={id:key,type:'warning',title:`📅 ${dueToday.length} قسط مستحق اليوم`,desc:dueToday.slice(0,3).map(x=>`${x.customerName} — قسط #${x.instNum}`).join(' | '),icon:'📅',date:new Date().toISOString(),read:false};notifications.unshift(n);DB.save('notifications',notifications);}}
+  if(notifications.length>50)notifications=notifications.slice(0,50);
+  DB.save('notifications',notifications);updateNotifBadge();
+}
+
+// ============================================================
+//  BACKUP
+// ============================================================
+function exportBackup(){const bk={version:'1.0-tork',date:new Date().toISOString(),...Object.fromEntries(['appName','phone','address','currency','taxRate','printType','carModels','users','categories','parts','customers','invoices','returns','treasury','activities'].map(k=>[k,data[k]]))};const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`tork-backup-${new Date().toLocaleDateString('ar').replace(/\//g,'-')}.json`;a.click();URL.revokeObjectURL(url);toast('تم تصدير النسخة الاحتياطية','success');}
+function importBackup(){const file=document.getElementById('backupFile').files[0];if(!file){toast('اختر ملفاً','error');return;}const reader=new FileReader();reader.onload=e=>{try{const bk=JSON.parse(e.target.result);confirm2('سيتم استبدال جميع البيانات الحالية. هل تريد الاستمرار؟',()=>{['appName','phone','address','currency','taxRate','printType','carModels','users','categories','parts','customers','invoices','returns','treasury','activities'].forEach(k=>{if(bk[k]!==undefined){data[k]=bk[k];DB.save(k,bk[k]);}});toast('تم الاستيراد','success');navigate('dashboard');});}catch(e){toast('ملف غير صالح','error');}};reader.readAsText(file);}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function confirm2(msg,cb){document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmAction').onclick=()=>{cb();closeModal('confirmDialog');};openModal('confirmDialog');}
+function toast(msg,type='info'){const el=document.getElementById('toast');const item=document.createElement('div');item.className=`toast-item ${type}`;item.style.cssText='background:var(--card);border:1px solid var(--border2);padding:11px 20px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;animation:toastIn .3s cubic-bezier(.34,1.56,.64,1);margin-bottom:6px;';if(type==='success')item.style.borderColor='var(--green)',item.style.color='var(--green)';if(type==='error')item.style.borderColor='var(--red2)',item.style.color='var(--red2)';if(type==='info')item.style.borderColor='var(--gold)',item.style.color='var(--gold)';item.innerHTML={success:'✅',error:'❌',info:'ℹ️'}[type]+' '+msg;document.getElementById('toast').appendChild(item);setTimeout(()=>item.remove(),3500);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,6);}
+function fmtNum(n){return Number(n||0).toLocaleString('ar-IQ');}
+function fmtDate(d){const diff=Date.now()-new Date(d).getTime();if(diff<60000)return'الآن';if(diff<3600000)return Math.floor(diff/60000)+' د';if(diff<86400000)return Math.floor(diff/3600000)+' س';return new Date(d).toLocaleDateString('ar-IQ');}
+function logActivity(text){data.activities.push({text,date:new Date().toISOString()});if(data.activities.length>100)data.activities=data.activities.slice(-100);DB.save('activities',data.activities);}
+// ============================================================
+//  THEME (DARK / LIGHT MODE)
+// ============================================================
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  DB.save('themeMode',isLight?'light':'dark');
+  const btn=document.getElementById('themeToggleBtn');
+  if(btn)btn.textContent=isLight?'☀️':'🌙';
+  toast(isLight?'☀️ المظهر الصباحي':'🌙 المظهر الليلي','info');
+}
+function applyTheme(){
+  const saved=DB.load('themeMode','dark');
+  if(saved==='light'){
+    document.body.classList.add('light-mode');
+    const btn=document.getElementById('themeToggleBtn');if(btn)btn.textContent='☀️';
+  }
+}
+applyTheme();
+
+// ============================================================
+//  AUTO BACKUP (Every 2 days)
+// ============================================================
+function checkAutoBackup(){
+  const lastBk=DB.load('lastAutoBackup',null);
+  const now=Date.now();
+  const twoDays=2*24*60*60*1000;
+  if(!lastBk||now-lastBk>=twoDays){
+    autoExportBackup();
+  }
+  renderAutoBackupStatus();
+}
+function autoExportBackup(){
+  const bk={version:'2.0-tork',date:new Date().toISOString(),...Object.fromEntries(['appName','phone','address','currency','taxRate','printType','carModels','users','categories','parts','customers','invoices','returns','treasury','activities'].map(k=>[k,data[k]]))};
+  const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const d=new Date();
+  a.download=`tork-auto-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click();URL.revokeObjectURL(url);
+  DB.save('lastAutoBackup',Date.now());
+  toast('💾 نسخة احتياطية تلقائية تم تصديرها','success');
+  addNotif('success','💾 نسخة احتياطية تلقائية','تم تصدير نسخة احتياطية تلقائية بنجاح','💾');
+  renderAutoBackupStatus();
+}
+function renderAutoBackupStatus(){
+  const el=document.getElementById('autoBackupStatus');if(!el)return;
+  const lastBk=DB.load('lastAutoBackup',null);
+  const now=Date.now();
+  const twoDays=2*24*60*60*1000;
+  if(lastBk){
+    const nextBk=new Date(lastBk+twoDays);
+    const diff=nextBk-now;
+    const hrs=Math.max(0,Math.ceil(diff/3600000));
+    el.innerHTML=`<div class="backup-indicator">✅ آخر نسخة: ${new Date(lastBk).toLocaleDateString('ar-IQ')} — الجلسة القادمة خلال ${hrs} ساعة</div>`;
+  } else {
+    el.innerHTML=`<div class="backup-indicator" style="background:var(--orange-dim);border-color:var(--orange);color:var(--orange)">⚠️ لم تُصدر نسخة احتياطية بعد</div>`;
+  }
+}
+function renderBackupPage(){
+  renderAutoBackupStatus();
+}
+
+// ============================================================
+//  AUTO PASSWORD ROTATION (Developer only - every 4 months)
+// ============================================================
+const DEV_SETTINGS_KEY='devSettings';
+function getDevSettings(){return DB.load(DEV_SETTINGS_KEY,{autoRotateEnabled:false,lastRotateDate:null});}
+function saveDevSettings(s){DB.save(DEV_SETTINGS_KEY,s);}
+
+function checkAutoPasswordRotation(){
+  const ds=getDevSettings();
+  if(!ds.autoRotateEnabled)return;
+  const fourMonths=4*30*24*60*60*1000;
+  const now=Date.now();
+  const last=ds.lastRotateDate?new Date(ds.lastRotateDate).getTime():0;
+  if(now-last>=fourMonths){
+    rotateAllPasswords('1234567');
+    ds.lastRotateDate=new Date().toISOString();
+    saveDevSettings(ds);
+    addNotif('warning','🔑 تم تدوير كلمات المرور','تم تغيير كلمات مرور جميع المستخدمين تلقائياً إلى الرمز الجديد','🔑');
+  }
+}
+function rotateAllPasswords(newPass){
+  data.users=data.users.map(u=>({...u,password:newPass}));
+  DB.save('users',data.users);
+  toast('🔑 تم تدوير كلمات المرور تلقائياً','info');
+}
+function toggleAutoRotate(enabled){
+  const ds=getDevSettings();
+  ds.autoRotateEnabled=enabled;
+  if(enabled&&!ds.lastRotateDate)ds.lastRotateDate=new Date().toISOString();
+  saveDevSettings(ds);
+  const slider=document.getElementById('toggleSlider');
+  const dot=document.getElementById('toggleDot');
+  if(slider){slider.style.background=enabled?'var(--purple)':'var(--bg4)';slider.style.borderColor=enabled?'var(--purple)':'var(--border2)';}
+  if(dot){dot.style.background=enabled?'white':'var(--text3)';dot.style.left=enabled?'27px':'3px';}
+  toast(enabled?'✅ التدوير التلقائي مفعّل':'⛔ التدوير التلقائي موقف','info');
+  renderDeveloperPanel();
+}
+function forceRotateNow(){
+  confirm2('تطبيق تدوير كلمات المرور الآن؟ سيتم تغيير رمز جميع المستخدمين إلى 1234567',()=>{
+    rotateAllPasswords('1234567');
+    const ds=getDevSettings();ds.lastRotateDate=new Date().toISOString();saveDevSettings(ds);
+    renderDeveloperPanel();toast('✅ تم تدوير كلمات المرور','success');
+  });
+}
+function renderDeveloperPanel(){
+  if(state.currentUser?.role!=='developer')return;
+  const ds=getDevSettings();
+  // Toggle state
+  const tog=document.getElementById('autoRotateToggle');
+  const slider=document.getElementById('toggleSlider');
+  const dot=document.getElementById('toggleDot');
+  if(tog)tog.checked=ds.autoRotateEnabled;
+  if(slider){slider.style.background=ds.autoRotateEnabled?'var(--purple)':'var(--bg4)';slider.style.borderColor=ds.autoRotateEnabled?'var(--purple)':'var(--border2)';}
+  if(dot){dot.style.background=ds.autoRotateEnabled?'white':'var(--text3)';dot.style.left=ds.autoRotateEnabled?'27px':'3px';}
+  // Status text
+  const statusEl=document.getElementById('autoRotateStatus');
+  if(statusEl)statusEl.textContent=ds.autoRotateEnabled?`مفعّل — آخر تدوير: ${ds.lastRotateDate?new Date(ds.lastRotateDate).toLocaleDateString('ar-IQ'):'لم يحدث بعد'}`:'موقف';
+  // Info box
+  const infoBox=document.getElementById('autoRotateInfo');
+  const infoContent=document.getElementById('rotateInfoContent');
+  if(infoBox)infoBox.style.display=ds.autoRotateEnabled?'block':'none';
+  if(infoContent&&ds.autoRotateEnabled){
+    const last=ds.lastRotateDate?new Date(ds.lastRotateDate):null;
+    const next=last?new Date(last.getTime()+4*30*24*60*60*1000):null;
+    infoContent.innerHTML=`
+      آخر تدوير: <strong>${last?last.toLocaleDateString('ar-IQ'):'لم يحدث'}</strong><br>
+      التدوير القادم: <strong>${next?next.toLocaleDateString('ar-IQ'):'—'}</strong><br>
+      الرمز الجديد: <strong style="color:var(--red2);letter-spacing:2px">1234567</strong>`;
+  }
+  // System info
+  const sysEl=document.getElementById('devSystemInfo');
+  if(sysEl){
+    const usedKB=Math.round(JSON.stringify(localStorage).length/1024);
+    sysEl.innerHTML=`
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">المستخدمون</span><strong>${data.users.length}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">الفواتير</span><strong>${data.invoices.length}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">القطع</span><strong>${data.parts.length}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">الزبائن</span><strong>${data.customers.length}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">حجم البيانات</span><strong>${usedKB} KB</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">المظهر</span><strong>${document.body.classList.contains('light-mode')?'☀️ صباحي':'🌙 ليلي'}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text3)">التاريخ</span><strong>${new Date().toLocaleDateString('ar-IQ')}</strong></div>`;
+  }
+  // Backup info
+  const bkEl=document.getElementById('backupDevInfo');
+  if(bkEl){
+    const lastBk=DB.load('lastAutoBackup',null);
+    bkEl.innerHTML=lastBk?
+      `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">آخر نسخة تلقائية</span><strong style="color:var(--green)">${new Date(lastBk).toLocaleDateString('ar-IQ')}</strong></div>
+       <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text3)">الجلسة القادمة</span><strong>${new Date(lastBk+2*24*60*60*1000).toLocaleDateString('ar-IQ')}</strong></div>`:
+      `<div style="color:var(--orange);font-size:12px">⚠️ لم تُصدر نسخة احتياطية تلقائية بعد</div>`;
+  }
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+const toastStyle=document.createElement('style');toastStyle.textContent='#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;}@keyframes toastIn{from{opacity:0;transform:translateY(-16px) scale(.95)}}';document.head.appendChild(toastStyle);
+</script>
+</body>
+</html>
